@@ -27,7 +27,9 @@ Create a Clerk application and enable verified email addresses. Use one applicat
 
 ```dotenv
 PH_AUTH_MODE=clerk
-PH_ORIGIN=http://127.0.0.1:4173
+PH_ORIGIN=http://127.0.0.1:4175
+PORT=4175
+PH_DB_PATH=.data/marketplace-clerk.sqlite
 CLERK_PUBLISHABLE_KEY=pk_test_replace_me
 CLERK_SECRET_KEY=sk_test_replace_me
 ```
@@ -36,7 +38,11 @@ CLERK_SECRET_KEY=sk_test_replace_me
 node --env-file=.env.clerk server/index.js
 ```
 
-Open the exact URL in `PH_ORIGIN`. Test sign-up, email verification, sign-in, private garden access, and sign-out in the development instance. To grant review access, have the account sign in once. Then use the Clerk user ID shown in the dashboard.
+Open the exact URL in `PH_ORIGIN`. Port `4175` and the separate database let the Clerk instance run alongside the demo.
+
+With [Clerk test mode](https://clerk.com/docs/guides/development/testing/test-emails-and-phones) enabled, sign up with a test address such as `garden+clerk_test@example.com`. Verify it with code `424242`. Open the private garden, sign out, and confirm that the garden asks you to sign in again. Then sign back in and confirm that the garden opens.
+
+To grant review access, have the account sign in once. Then use the Clerk user ID shown in the dashboard.
 
 ```sh
 node --env-file=.env.clerk server/reviewer.js --clerk user_ID_FROM_DASHBOARD
