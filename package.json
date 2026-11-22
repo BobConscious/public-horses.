@@ -1,0 +1,26 @@
+{
+  "name": "public-horses",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.14 <25"
+  },
+  "scripts": {
+    "dev": "node server/index.js",
+    "demo": "node server/index.js --demo",
+    "build": "vite build",
+    "start": "node server/index.js --production",
+    "reviewer": "node server/reviewer.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "5.3.0",
+    "lucide-react": "1.77.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "vite": "8.3.8"
+  }
+}
