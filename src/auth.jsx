@@ -9,9 +9,13 @@ export function signInLink(path) {
   return `/sign-in?next=${encodeURIComponent(path)}`;
 }
 
+export function resumePath(search = window.location.search) {
+  const requested = new URLSearchParams(search).get('next');
+  return requested && allowedResumePath.test(requested) ? requested : '/';
+}
+
 export function AccountPage({ register, user }) {
-  const requested = new URLSearchParams(window.location.search).get('next');
-  const next = requested && allowedResumePath.test(requested) ? requested : '/';
+  const next = resumePath();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const submitting = useRef(false);

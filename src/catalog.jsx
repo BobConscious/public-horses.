@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, CircleCheck, Leaf, MapPin, Search, ShieldCheck, Sprout, X } from 'lucide-react';
 import { fields } from '../shared/catalog.js';
-import { api } from './http.js';
+import { useApi } from './http.js';
 import { signInLink } from './auth.jsx';
 import { Deadline, EmptyProjects, ErrorNotice, FieldIcon, LoadState, ProjectArt, fieldName, kindName, officialUrl, useLoad } from './ui.jsx';
 
@@ -131,6 +131,7 @@ export function clearSupportAttempts(userId) {
 }
 
 function SupportForm({ project, user }) {
+  const api = useApi();
   const attemptKey = attemptKeyFor(user, project);
   const [attempt, setAttempt] = useState(() => readAttempt(attemptKey));
   const [type, setType] = useState(attempt?.type ?? project.needs[0]?.type ?? '');

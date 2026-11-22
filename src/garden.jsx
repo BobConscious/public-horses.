@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, BookOpen, Droplet, Leaf, LockKeyhole, Plus, Sprout } from 'lucide-react';
 import { fields } from '../shared/catalog.js';
-import { api } from './http.js';
+import { useApi } from './http.js';
 import './garden.css';
 
 const plotNumbers = Array.from({ length: 12 }, (_, index) => index + 1);
@@ -184,6 +184,7 @@ function HarvestJournal({ seeds }) {
 }
 
 function MemberGarden() {
+  const api = useApi();
   const [seeds, setSeeds] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -208,7 +209,7 @@ function MemberGarden() {
       },
     );
     return () => { active = false; };
-  }, [refreshKey]);
+  }, [api, refreshKey]);
 
   useEffect(() => {
     if (busy || !nextFocus.current) return;

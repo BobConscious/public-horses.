@@ -48,7 +48,7 @@ function accountView(row) {
   return { id: row.id, name: row.name, email: row.email, reviewer: Boolean(row.reviewer) };
 }
 
-export function createApi(store, { demo = false, secureCookies = false } = {}) {
+export function createApi(store, { demo = false, secureCookies = false, clerk } = {}) {
   const api = Router();
   const cookies = { httpOnly: true, sameSite: 'lax', secure: secureCookies, path: '/' };
   const attempts = new Map();
@@ -81,50 +81,62 @@ export function createApi(store, { demo = false, secureCookies = false } = {}) {
     res.cookie(cookieName, token, { ...cookies, maxAge: sessionLifetime });
   }
 
-  function signedIn(req, _res, next) {
+  async function signedIn(req, _res, next) {
+    if (clerk) req.member = await clerk.member(req, store);
     requireThat(req.member, 401, 'Sign in to continue.');
     next();
   }
 
-  function reviewer(req, res, next) {
-    signedIn(req, res, () => {
-      requireThat(req.member.reviewer, 403, 'Review access is required.');
+  function reviewer(req, _res, next) {
+    requireThat(req.member.reviewer, 403, 'Review access is required.');
+    next();
+  }
+
+  api.get('/auth-config', (_req, res) => res.json(clerk
+    ? { mode: 'clerk', publishableKey: clerk.publishableKey }
+    : { mode: 'local' }));
+  api.get('/projects', (_req, res) => res.json({ projects: store.listPublic(demo) }));
+  api.get('/projects/:slug', (req, res) => res.json({ project: store.getPublic(req.params.slug, demo) }));
+
+  if (clerk) {
+    api.use(clerk.middleware);
+  } else {
+    api.use((req, _res, next) => {
+      req.sessionToken = cookieToken(req);
+      req.member = req.sessionToken ? store.sessionUser(digest(req.sessionToken)) : null;
       next();
     });
   }
-
-  api.use((req, _res, next) => {
-    req.sessionToken = cookieToken(req);
-    req.member = req.sessionToken ? store.sessionUser(digest(req.sessionToken)) : null;
-    next();
-  });
   api.use(json({ limit: '24kb' }));
 
-  api.get('/session', (req, res) => res.json({ user: req.member, demo }));
-  api.post('/accounts', requireRate, async (req, res) => {
-    const { name, email, password } = body(req);
-    const cleanName = text(name, 'Your name', 80);
-    const cleanEmail = emailAddress(email);
-    const user = store.createAccount(cleanName, cleanEmail, await hashPassword(password));
-    startSession(req, res, user);
-    res.status(201).json({ user });
+  api.get('/session', async (req, res) => {
+    const user = clerk ? await clerk.member(req, store) : req.member;
+    res.json(clerk ? { user, demo, clerkSessionId: req.clerkSessionId ?? null } : { user, demo });
   });
-  api.post('/session', requireRate, async (req, res) => {
-    const { email, password } = body(req);
-    const row = store.accountCredentials(emailAddress(email));
-    requireThat(await validPassword(password, row), 401, 'The email or password is incorrect.');
-    const user = accountView(row);
-    startSession(req, res, user);
-    res.json({ user });
-  });
-  api.delete('/session', (req, res) => {
-    if (req.sessionToken) store.endSession(digest(req.sessionToken));
-    res.clearCookie(cookieName, cookies);
-    res.json({ ok: true });
-  });
+  if (!clerk) {
+    api.post('/accounts', requireRate, async (req, res) => {
+      const { name, email, password } = body(req);
+      const cleanName = text(name, 'Your name', 80);
+      const cleanEmail = emailAddress(email);
+      const user = store.createAccount(cleanName, cleanEmail, await hashPassword(password));
+      startSession(req, res, user);
+      res.status(201).json({ user });
+    });
+    api.post('/session', requireRate, async (req, res) => {
+      const { email, password } = body(req);
+      const row = store.accountCredentials(emailAddress(email));
+      requireThat(await validPassword(password, row), 401, 'The email or password is incorrect.');
+      const user = accountView(row);
+      startSession(req, res, user);
+      res.json({ user });
+    });
+    api.delete('/session', (req, res) => {
+      if (req.sessionToken) store.endSession(digest(req.sessionToken));
+      res.clearCookie(cookieName, cookies);
+      res.json({ ok: true });
+    });
+  }
 
-  api.get('/projects', (_req, res) => res.json({ projects: store.listPublic(demo) }));
-  api.get('/projects/:slug', (req, res) => res.json({ project: store.getPublic(req.params.slug, demo) }));
   api.post('/projects', signedIn, (req, res) =>
     res.status(201).json({ project: store.createProject(req.member.id, body(req)) }));
   api.get('/mine/projects', signedIn, (req, res) => res.json({ projects: store.listOwned(req.member.id) }));
@@ -135,8 +147,8 @@ export function createApi(store, { demo = false, secureCookies = false } = {}) {
   api.post('/mine/projects/:id/close', signedIn, (req, res) =>
     res.json({ project: store.closeProject(req.member.id, req.params.id, body(req).version) }));
 
-  api.get('/review', reviewer, (req, res) => res.json({ projects: store.reviewQueue(req.member.id) }));
-  api.post('/review/:id', reviewer, (req, res) =>
+  api.get('/review', signedIn, reviewer, (req, res) => res.json({ projects: store.reviewQueue(req.member.id) }));
+  api.post('/review/:id', signedIn, reviewer, (req, res) =>
     res.json({ project: store.reviewProject(req.member.id, req.params.id, body(req)) }));
 
   api.post('/support', signedIn, (req, res) =>

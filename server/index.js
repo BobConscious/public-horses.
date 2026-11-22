@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createApi } from './api.js';
+import { appContentSecurityPolicy, createClerkAuth, loadClerkConfig } from './clerk.js';
 import { seedDemo } from './demo.js';
 import { createStore } from './store.js';
 
@@ -26,9 +27,10 @@ export function databasePath(demo) {
   return path;
 }
 
-export function createApp({ store, demo = false, origin, production = false }) {
+export function createApp({ store, demo = false, origin, production = false, clerk }) {
   const app = express();
   const secureCookies = origin?.startsWith('https://') ?? false;
+  const csp = production ? appContentSecurityPolicy(clerk?.frontendOrigin) : null;
   app.disable('x-powered-by');
   app.use((req, res, next) => {
     const requestUrl = URL.parse('http://' + (req.get('Host') ?? ''));
@@ -46,15 +48,13 @@ export function createApp({ store, demo = false, origin, production = false }) {
     res.set('X-Content-Type-Options', 'nosniff');
     res.set('X-Frame-Options', 'DENY');
     res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    if (production) {
-      res.set('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; base-uri 'none'");
-    }
+    if (csp) res.set('Content-Security-Policy', csp);
     next();
   });
   app.use('/api', (_req, res, next) => {
     res.set('Cache-Control', 'private, no-store');
     next();
-  }, createApi(store, { demo, secureCookies }));
+  }, createApi(store, { demo, secureCookies, clerk }));
   app.use('/api', (_req, res) => res.status(404).json({ error: 'API route not found.' }));
   return app;
 }
@@ -62,6 +62,8 @@ export function createApp({ store, demo = false, origin, production = false }) {
 async function start() {
   const demo = process.argv.includes('--demo');
   const production = process.argv.includes('--production');
+  const clerkConfig = loadClerkConfig(process.env, { demo });
+  const clerk = clerkConfig ? createClerkAuth(clerkConfig) : undefined;
   const host = (demo ? undefined : process.env.HOST) || '127.0.0.1';
   const port = Number(process.env.PORT || 4173);
   const origin = demo ? undefined : process.env.PH_ORIGIN;
@@ -78,7 +80,7 @@ async function start() {
   mkdirSync(dirname(path), { recursive: true });
   const store = createStore(path);
   if (demo) seedDemo(store);
-  const app = createApp({ store, demo, origin, production });
+  const app = createApp({ store, demo, origin, production, clerk });
   const server = createServer(app);
   if (production) {
     const dist = resolve(root, 'dist');

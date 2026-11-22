@@ -13,6 +13,13 @@ function userView(row) {
   return row ? { id: row.id, name: row.name, email: row.email, reviewer: Boolean(row.reviewer) } : null;
 }
 
+function checkClerkIdentity(issuer, subject) {
+  const url = typeof issuer === 'string' && issuer.length <= 256 ? URL.parse(issuer) : null;
+  requireThat(url?.protocol === 'https:' && url.origin === issuer, 400, 'Invalid Clerk issuer.');
+  requireThat(typeof subject === 'string' && /^user_[A-Za-z0-9_-]{1,128}$/u.test(subject), 400,
+    'Invalid Clerk user ID.');
+}
+
 function seedView(row) {
   return {
     id: row.id, projectTitle: row.project_title, intention: row.intention, note: row.note, type: row.type,
@@ -41,6 +48,8 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
   const byId = (id) => get('SELECT * FROM projects WHERE id = ?', id);
   const seedById = (id) => get('SELECT * FROM seeds WHERE id = ?', id);
   const isOpen = (row, on) => row.status === 'published' && row.ends_at >= on;
+  const clerkMemberRow = (issuer, subject) => get(`SELECT m.* FROM members m
+    JOIN member_identities i ON m.id = i.member_id WHERE i.issuer = ? AND i.subject = ?`, issuer, subject);
 
   function transaction(action) {
     db.exec('BEGIN IMMEDIATE');
@@ -121,11 +130,40 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
         return userView(get('SELECT * FROM members WHERE id = ?', id));
       });
     },
+    clerkMember(issuer, subject) {
+      checkClerkIdentity(issuer, subject);
+      return userView(clerkMemberRow(issuer, subject));
+    },
+    provisionClerkMember({ issuer, subject, name, email }) {
+      checkClerkIdentity(issuer, subject);
+      return transaction(() => {
+        const existing = clerkMemberRow(issuer, subject);
+        if (existing) return userView(existing);
+        const cleanName = text(name, 'Your name', 80);
+        const cleanEmail = emailAddress(email);
+        requireThat(!get('SELECT 1 FROM members WHERE email = ?', cleanEmail), 409,
+          'This email already belongs to another Public Horses account.');
+        const id = randomUUID();
+        run('INSERT INTO members(id, name, email, password_hash) VALUES(?, ?, ?, ?)', id, cleanName, cleanEmail, 'disabled');
+        run('INSERT INTO member_identities(issuer, subject, member_id) VALUES(?, ?, ?)', issuer, subject, id);
+        return userView(get('SELECT * FROM members WHERE id = ?', id));
+      });
+    },
     setReviewer(address) {
       const email = emailAddress(address);
-      const result = run('UPDATE members SET reviewer = 1 WHERE email = ?', email);
-      requireThat(result.changes, 404, 'Create the account before assigning review access.');
+      const member = get('SELECT id FROM members WHERE email = ?', email);
+      requireThat(member, 404, 'Create the account before assigning review access.');
+      requireThat(!get('SELECT 1 FROM member_identities WHERE member_id = ?', member.id), 409,
+        'Assign Clerk review access using the Clerk user ID.');
+      run('UPDATE members SET reviewer = 1 WHERE id = ?', member.id);
       return userView(get('SELECT * FROM members WHERE email = ?', email));
+    },
+    setClerkReviewer(issuer, subject) {
+      checkClerkIdentity(issuer, subject);
+      const member = clerkMemberRow(issuer, subject);
+      requireThat(member, 404, 'Sign in with Clerk before assigning review access.');
+      run('UPDATE members SET reviewer = 1 WHERE id = ?', member.id);
+      return userView(clerkMemberRow(issuer, subject));
     },
     startSession(member, tokenHash, lifetime) {
       const stamp = new Date(clock()).valueOf();

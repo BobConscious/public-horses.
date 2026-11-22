@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { ArrowRight, ArrowUpRight, FilePenLine, Plus, ShieldCheck } from 'lucide-react';
 import { fields, supportKinds } from '../shared/catalog.js';
-import { api } from './http.js';
+import { useApi } from './http.js';
 import { signInLink } from './auth.jsx';
 import { Deadline, ErrorNotice, LoadState, fieldName, kindName, officialUrl, useLoad } from './ui.jsx';
 
@@ -26,6 +26,7 @@ function SignedOut({ path, title, children }) {
 }
 
 function ProjectEditor({ project, onSaved, onCancel }) {
+  const api = useApi();
   const [needs, setNeeds] = useState(() => project?.needs ?? []);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
@@ -115,6 +116,7 @@ function ProjectEditor({ project, onSaved, onCancel }) {
 }
 
 function WorkspaceProjects() {
+  const api = useApi();
   const list = useLoad('/mine/projects');
   const [editing, setEditing] = useState(null);
   const [busy, setBusy] = useState(null);
@@ -184,6 +186,7 @@ export function Workspace({ user, sessionReady }) {
 }
 
 function ReviewCard({ project, onDecision }) {
+  const api = useApi();
   const [note, setNote] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);

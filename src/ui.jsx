@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BookOpen, Clock3, Flower2, HandHeart, HeartPulse, Search, Sprout, Sunset, Users, Wheat } from 'lucide-react';
 import { fields, supportKinds } from '../shared/catalog.js';
-import { api } from './http.js';
+import { useApi } from './http.js';
 
 const fieldIcons = {
   nourishment: Wheat,
@@ -44,6 +44,7 @@ export function ProjectArt({ project, className = '' }) {
 }
 
 export function useLoad(path) {
+  const api = useApi();
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState({ data: null, error: null });
   useEffect(() => {
@@ -55,7 +56,7 @@ export function useLoad(path) {
       );
     }
     return () => { active = false; };
-  }, [path, revision]);
+  }, [api, path, revision]);
   return {
     ...state,
     reload() {

@@ -6,6 +6,13 @@ CREATE TABLE IF NOT EXISTS members (
   reviewer INTEGER NOT NULL DEFAULT 0 CHECK (reviewer IN (0, 1))
 ) STRICT;
 
+CREATE TABLE IF NOT EXISTS member_identities (
+  issuer TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  member_id TEXT NOT NULL UNIQUE REFERENCES members(id) ON DELETE CASCADE,
+  PRIMARY KEY (issuer, subject)
+) STRICT;
+
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY,
   member_id TEXT NOT NULL REFERENCES members(id) ON DELETE CASCADE,

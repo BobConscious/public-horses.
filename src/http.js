@@ -1,9 +1,12 @@
-export async function api(path, { method = 'GET', body } = {}) {
+import { createContext, useContext } from 'react';
+
+export async function api(path, { method = 'GET', body, clerkSessionId } = {}) {
   const response = await fetch('/api' + path, {
     method,
     credentials: 'same-origin',
     headers: {
       Accept: 'application/json',
+      ...(clerkSessionId ? { 'X-PH-Session': clerkSessionId } : {}),
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -16,3 +19,6 @@ export async function api(path, { method = 'GET', body } = {}) {
   }
   return data;
 }
+
+export const ApiContext = createContext(api);
+export const useApi = () => useContext(ApiContext);

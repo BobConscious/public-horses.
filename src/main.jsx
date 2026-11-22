@@ -1,4 +1,4 @@
-import { StrictMode, useState } from 'react';
+import { lazy, StrictMode, Suspense, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ArrowUpRight, Leaf, Menu, Sprout, X } from 'lucide-react';
 import { api } from './http.js';
@@ -13,7 +13,13 @@ function Wordmark() {
   return <a href="/" className="wordmark"><span className="wordmark-symbol"><Sprout size={23} strokeWidth={1.85} aria-hidden="true" /></span>Public Horses</a>;
 }
 
-function Header({ path, user }) {
+async function signOutLocal(user) {
+  await api('/session', { method: 'DELETE' });
+  clearSupportAttempts(user.id);
+  window.location.assign('/');
+}
+
+function Header({ path, user, signedIn = Boolean(user), onSignOut = signOutLocal }) {
   const [expanded, setExpanded] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState(null);
@@ -23,9 +29,7 @@ function Header({ path, user }) {
     setSigningOut(true);
     setError(null);
     try {
-      await api('/session', { method: 'DELETE' });
-      clearSupportAttempts(user.id);
-      window.location.assign('/');
+      await onSignOut(user);
     } catch (failure) {
       setError(failure);
       setSigningOut(false);
@@ -53,7 +57,7 @@ function Header({ path, user }) {
             {user?.reviewer && <a href="/review" aria-current={current('/review')}>Review</a>}
           </div>
           <div className="nav-account">
-            {user ? <button type="button" className="button button-plain" disabled={signingOut} onClick={signOut}>Sign out</button>
+            {signedIn ? <button type="button" className="button button-plain" disabled={signingOut} onClick={signOut}>Sign out</button>
               : <a href="/sign-in" className="button button-plain">Sign in</a>}
             <a href="/workspace" className="button button-primary">Start a project <ArrowUpRight size={16} aria-hidden="true" /></a>
           </div>
@@ -79,29 +83,36 @@ function NotFound() {
   return <section className="page-panel container"><h1>Page not found</h1><p>Try the project directory.</p><a href="/#projects" className="button button-primary">Explore projects</a></section>;
 }
 
-function App() {
+function App({ AuthPage = AccountPage, onSignOut, clerkSessionId }) {
   const path = window.location.pathname.replace(/\/$/, '') || '/';
   const projectPath = /^\/projects\/([a-z0-9-]+)$/.exec(path);
-  const session = useLoad('/session');
-  const user = session.data?.user ?? null;
-  const sessionReady = Boolean(session.data);
+  const isAuthPage = path === '/sign-in' || path === '/sign-up';
+  const guestClerkSession = clerkSessionId === null;
+  const clerkSignedIn = typeof clerkSessionId === 'string';
+  const session = useLoad(guestClerkSession ? null : '/session');
+  const sessionMatches = !clerkSignedIn || session.data?.clerkSessionId === clerkSessionId;
+  const user = sessionMatches ? session.data?.user ?? null : null;
+  const sessionReady = guestClerkSession || Boolean(session.data);
+  const memberUnavailable = clerkSignedIn && sessionReady && !user;
+  const loadingMember = !sessionReady && (path === '/garden' || isAuthPage && clerkSignedIn);
   let page;
   if (path === '/') page = <HomePage />;
   else if (projectPath) page = <ProjectPage slug={projectPath[1]} user={user} sessionReady={sessionReady} />;
   else if (path === '/garden') page = <Garden user={user} />;
   else if (path === '/workspace') page = <Workspace user={user} sessionReady={sessionReady} />;
   else if (path === '/review') page = <Review user={user} sessionReady={sessionReady} />;
-  else if (path === '/sign-in' || path === '/sign-up') page = <AccountPage user={user} register={path === '/sign-up'} />;
+  else if (isAuthPage) page = <AuthPage user={user} register={path === '/sign-up'} />;
   else page = <NotFound />;
 
   return (
     <>
-      <Header path={path} user={user} />
+      <Header path={path} user={user} signedIn={clerkSignedIn || Boolean(user)} onSignOut={onSignOut} />
       {session.data?.demo && <div className="demo-notice"><Leaf size={14} aria-hidden="true" /> Demo workspace. The sample projects are fictional.</div>}
-      {path === '/garden' && sessionReady ? page : (
+      {path === '/garden' && sessionReady && !memberUnavailable ? page : (
         <main id="main" className="site-main">
           {session.error ? <div className="container page-panel"><LoadState state={session} /></div>
-             : path === '/garden' ? <p className="loading container" role="status">Checking your session…</p> : page}
+             : memberUnavailable ? <div className="container page-panel"><LoadState state={{ ...session, error: 'Your account could not load. Sign out and back in if this continues.' }} /></div>
+             : loadingMember ? <p className="loading container" role="status">Checking your session…</p> : page}
         </main>
       )}
       <Footer />
@@ -109,4 +120,20 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')).render(<StrictMode><App /></StrictMode>);
+const ClerkApp = lazy(() => import('./clerk.jsx'));
+
+function Root() {
+  const config = useLoad('/auth-config');
+  if (config.data?.mode === 'local') return <App />;
+  if (config.data?.mode === 'clerk' && typeof config.data.publishableKey === 'string' && config.data.publishableKey) {
+    return (
+      <Suspense fallback={<p className="loading container" role="status">Loading sign-in…</p>}>
+        <ClerkApp App={App} publishableKey={config.data.publishableKey} />
+      </Suspense>
+    );
+  }
+  const state = config.data ? { ...config, error: 'Authentication is unavailable.' } : config;
+  return <main className="container page-panel"><LoadState state={state} /></main>;
+}
+
+createRoot(document.getElementById('root')).render(<StrictMode><Root /></StrictMode>);
