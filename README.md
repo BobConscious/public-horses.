@@ -77,4 +77,3 @@ Fast for Hunger is the proposed first pilot partner. It can link to Nourishment 
 
 - [Flower Garden and Bungalow, Bermuda](https://www.metmuseum.org/art/collection/search/11121), Winslow Homer, 1899. The Metropolitan Museum of Art.
 - [Swamp Azalea](https://americanart.si.edu/artwork/swamp-azalea-azalea-viscosa-26378), Mary Vaux Walcott, 1918. Smithsonian American Art Museum.
-- The horse mark adapts GDJ’s [Horse Head Silhouette](https://openclipart.org/detail/241416/horse-head-silhouette). [CC0](https://openclipart.org/share#licensing).
