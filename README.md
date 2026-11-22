@@ -21,6 +21,10 @@ npm run build
 
 The reviewer command grants access to an existing account. Run `npm run dev` for an empty catalog and omit `--demo` when assigning review access there.
 
+## Private Vercel preview
+
+Enable Vercel Authentication on the preview project before deploying. Open the deployment URL that Vercel generates. The preview uses fictional projects. Use a test account to try the garden. Vercel can clear preview records when it restarts the function.
+
 ## Connect Clerk
 
 Create a Clerk application and enable verified email addresses. Use one application origin for the UI and API. Copy the publishable and secret keys from that Clerk instance into an ignored `.env.clerk` file.

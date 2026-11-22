@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/*.js": {
+      "includeFiles": "server/schema.sql"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/preview" },
+    { "source": "/:page(garden|workspace|review|sign-in|sign-up)", "destination": "/index.html" },
+    { "source": "/projects/:slug", "destination": "/index.html" }
+  ]
+}
