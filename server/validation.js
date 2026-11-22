@@ -1,4 +1,4 @@
-import { fields as fieldCatalog, supportKinds } from '../shared/catalog.js';
+import { fields as fieldCatalog, listingTypes as listingCatalog, profileKinds as profileCatalog, supportKinds } from '../shared/catalog.js';
 
 export class HttpError extends Error {
   constructor(status, message) {
@@ -41,10 +41,26 @@ function httpsUrl(value, label, demo) {
 
 const fields = new Set(fieldCatalog.map(({ id }) => id));
 const needTypes = new Set(supportKinds.map(({ id }) => id));
+const listingTypes = new Set(listingCatalog.map(({ id }) => id));
+const profileKinds = new Set(profileCatalog.map(({ id }) => id));
+
+export function profileInput(input, kind = input.kind) {
+  requireThat(profileKinds.has(kind), 400, 'Choose a person or organization profile.');
+  requireThat(input.kind === undefined || input.kind === kind, 400, 'A profile type cannot change.');
+  const website = text(input.websiteUrl, 'Website', 1000, { optional: true });
+  return {
+    kind,
+    name: text(input.name, 'Profile name', 96),
+    bio: text(input.bio, 'About', 2000, { optional: true }),
+    location: text(input.location, 'Location', 96, { optional: true }),
+    websiteUrl: website ? httpsUrl(website, 'the profile website', false) : '',
+  };
+}
 
 export function projectInput(input, today, { demo = false } = {}) {
-  const { field, endsAt, needs } = input;
+  const { field, endsAt, needs, listingType = 'project' } = input;
   requireThat(fields.has(field), 400, 'Choose a field.');
+  requireThat(listingTypes.has(listingType), 400, 'Choose a listing type.');
   requireThat(typeof endsAt === 'string' && /^\d{4}-\d{2}-\d{2}$/u.test(endsAt), 400,
     'Choose a valid end date.');
   const date = new Date(endsAt + 'T00:00:00.000Z');
@@ -55,11 +71,14 @@ export function projectInput(input, today, { demo = false } = {}) {
   const seen = new Set();
   return {
     title: text(input.title, 'Project title', 96),
-    organization: text(input.organization, 'Organization', 96),
+    profileId: input.profileId === undefined ? undefined : text(input.profileId, 'a profile', 128),
+    organization: text(input.organization, 'Organization', 96, { optional: true }),
     location: text(input.location, 'Location', 96),
     summary: text(input.summary, 'Summary', 200),
     story: text(input.story, 'Story', 4000),
     field,
+    listingType,
+    schedule: text(input.schedule, 'Schedule', 200, { optional: true }),
     endsAt,
     proofUrl: httpsUrl(input.proofUrl, 'the source for review', demo),
     needs: needs.map((need) => {
@@ -85,7 +104,7 @@ export function supportInput(input) {
     note: text(input.note, 'Private note', 500, { optional: true }) };
 }
 
-export function expectVersion(version, row) {
-  requireThat(Number.isSafeInteger(version) && version > 0, 400, 'Refresh to get the current project version.');
-  requireThat(version === row.version, 409, 'This project changed. Refresh and review the current version.');
+export function expectVersion(version, row, subject = 'project') {
+  requireThat(Number.isSafeInteger(version) && version > 0, 400, `Refresh to get the current ${subject} version.`);
+  requireThat(version === row.version, 409, `This ${subject} changed. Refresh and review the current version.`);
 }

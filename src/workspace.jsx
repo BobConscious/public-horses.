@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, ArrowUpRight, FilePenLine, Plus, ShieldCheck } from 'lucide-react';
-import { fields, supportKinds } from '../shared/catalog.js';
+import { fields, listingTypes, profileKinds, supportKinds } from '../shared/catalog.js';
 import { useApi } from './http.js';
 import { signInLink } from './auth.jsx';
 import { Deadline, ErrorNotice, LoadState, fieldName, kindName, officialUrl, useLoad } from './ui.jsx';
+import { ProfileEditor, ProfileList } from './profile-editor.jsx';
 
 const statusLabels = {
   draft: 'Draft',
@@ -14,6 +15,7 @@ const statusLabels = {
 };
 
 const editable = new Set(['draft', 'changes_requested']);
+const listingLabel = (type) => listingTypes.find(({ id }) => id === type)?.label ?? 'Project';
 
 function SignedOut({ path, title, children }) {
   return (
@@ -25,12 +27,16 @@ function SignedOut({ path, title, children }) {
   );
 }
 
-function ProjectEditor({ project, onSaved, onCancel }) {
+function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel }) {
   const api = useApi();
   const [needs, setNeeds] = useState(() => project?.needs ?? []);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const submitting = useRef(false);
+  const heading = useRef(null);
+  const profileId = project?.profile?.id ?? preferredProfile ?? (profiles.length === 1 ? profiles[0].id : '');
+
+  useEffect(() => { heading.current?.focus(); }, []);
 
   function setNeed(type, input, value) {
     setNeeds((current) => current.map((need) => need.type === type ? { ...need, [input]: value } : need));
@@ -65,13 +71,24 @@ function ProjectEditor({ project, onSaved, onCancel }) {
 
   return (
     <section className="workspace-panel" aria-labelledby="editor-heading">
-      <h2 id="editor-heading">{project ? 'Edit draft' : 'New project'}</h2>
+      <h2 ref={heading} tabIndex={-1} id="editor-heading">{project ? 'Edit draft' : 'New project'}</h2>
       {project?.reviewNote && <p className="notice">Reviewer note. {project.reviewNote}</p>}
       <form className="stack-form" onSubmit={save}>
         <label>Project title<input required name="title" maxLength={96} defaultValue={project?.title} /></label>
         <div className="form-columns">
-          <label>Organization<input required name="organization" maxLength={96} defaultValue={project?.organization} /></label>
-          <label>Location<input required name="location" maxLength={96} defaultValue={project?.location} /></label>
+          <label>Organizer profile
+            <select required name="profileId" defaultValue={profileId}>
+              <option value="" disabled>Choose a profile</option>
+              {profiles.map((profile) => <option key={profile.id} value={profile.id}>
+                {profile.name} ({profileKinds.find(({ id }) => id === profile.kind)?.label})
+              </option>)}
+            </select>
+          </label>
+          <label>Listing type
+            <select required name="listingType" defaultValue={project?.listingType ?? 'project'}>
+              {listingTypes.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
+            </select>
+          </label>
         </div>
         <div className="form-columns">
           <label>Field
@@ -81,6 +98,12 @@ function ProjectEditor({ project, onSaved, onCancel }) {
             </select>
           </label>
           <label>Last day to help<input required type="date" name="endsAt" defaultValue={project?.endsAt} /></label>
+        </div>
+        <div className="form-columns">
+          <label>Location<input required name="location" maxLength={96} defaultValue={project?.location} /></label>
+          <label><span>Schedule <span className="optional">Optional</span></span>
+            <input name="schedule" maxLength={200} defaultValue={project?.schedule} placeholder="For example, Saturdays at 10 a.m. ET" />
+          </label>
         </div>
         <label>Short summary<textarea required name="summary" rows={2} maxLength={200} defaultValue={project?.summary} /></label>
         <label>Project description<textarea required name="story" rows={5} maxLength={4000} defaultValue={project?.story} /></label>
@@ -118,10 +141,27 @@ function ProjectEditor({ project, onSaved, onCancel }) {
 function WorkspaceProjects() {
   const api = useApi();
   const list = useLoad('/mine/projects');
-  const [editing, setEditing] = useState(null);
+  const profileList = useLoad('/mine/profiles');
+  const [editor, setEditor] = useState(null);
   const [busy, setBusy] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState(null);
+  const profiles = profileList.data?.profiles ?? [];
+
+  function startProject() {
+    setEditor(profiles.length ? { type: 'project' } : { type: 'profile', startProject: true });
+  }
+
+  function closeEditor() {
+    setEditor(null);
+  }
+
+  function profileSaved(profile) {
+    if (editor.record) list.reload();
+    setEditor(editor.startProject ? { type: 'project', preferredProfile: profile.id } : null);
+    setMessage('Profile saved.');
+    profileList.reload();
+  }
 
   async function change(project, action) {
     if (busy) return;
@@ -143,38 +183,48 @@ function WorkspaceProjects() {
   return (
     <div className="workspace-page container">
       <div className="workspace-title"><div><h1>Your projects</h1><p>A reviewer checks each request before it can appear in the directory.</p></div>
-        {!editing && <button className="button button-primary" type="button" onClick={() => setEditing('new')}><Plus size={19} aria-hidden="true" /> New project</button>}
+        {!editor && <button className="button button-primary" type="button" disabled={Boolean(busy) || !profileList.data} onClick={startProject}><Plus size={19} aria-hidden="true" /> New project</button>}
       </div>
       {message && <p className="notice" role="status">{message}</p>}
       <ErrorNotice error={error} />
-      {editing && <ProjectEditor key={editing === 'new' ? 'new' : editing.id} project={editing === 'new' ? null : editing}
-        onSaved={() => { setEditing(null); setMessage('Draft saved.'); list.reload(); }} onCancel={() => setEditing(null)} />}
+      <ProfileList state={profileList} busy={Boolean(editor) || Boolean(busy)}
+        onAdd={() => setEditor({ type: 'profile' })}
+        onEdit={(profile) => setEditor({ type: 'profile', record: profile })}>
+        {editor?.type === 'profile' && <ProfileEditor profile={editor.record} hasPerson={profiles.some(({ kind }) => kind === 'person')}
+          startProject={editor.startProject} onSaved={profileSaved} onCancel={closeEditor}
+          onReload={() => { closeEditor(); profileList.reload(); }} />}
+      </ProfileList>
+      {editor?.type === 'project' && profileList.data && <ProjectEditor key={editor.record?.id ?? 'new'} project={editor.record}
+        profiles={profiles} preferredProfile={editor.preferredProfile}
+        onSaved={() => { closeEditor(); setMessage('Draft saved.'); list.reload(); }} onCancel={closeEditor} />}
       {!list.data ? <LoadState state={list} /> : list.data.projects.length ? (
         <div className="record-list">
           {list.data.projects.map((project) => (
             <article className="record-card" key={project.id}>
               <span className="record-status" data-status={project.status}>{statusLabels[project.status] ?? project.status}</span>
               <h2>{project.title}</h2>
-              <p>{project.organization} · {fieldName(project.field)}</p>
+              <p>{project.profile?.name ?? project.organization} · {listingLabel(project.listingType)} · {fieldName(project.field)}</p>
+              {project.schedule && <p>{project.schedule}</p>}
               {project.reviewNote && <p className="record-note">Reviewer note. {project.reviewNote}</p>}
               <div className="form-actions">
                 {editable.has(project.status) && (
                   <>
-                    <button type="button" className="button button-outline" disabled={Boolean(busy)} onClick={() => setEditing(project)}>Edit draft</button>
-                    <button type="button" className="button button-primary" disabled={Boolean(busy) || Boolean(editing)} onClick={() => change(project, 'submit')}>Submit for review</button>
+                    <button type="button" className="button button-outline" disabled={Boolean(busy) || Boolean(editor) || !profileList.data}
+                      onClick={() => setEditor({ type: 'project', record: project })}>Edit draft</button>
+                    <button type="button" className="button button-primary" disabled={Boolean(busy) || Boolean(editor)} onClick={() => change(project, 'submit')}>Submit for review</button>
                   </>
                 )}
                 {project.status === 'published' && (
                   <>
                     <a className="button button-outline" href={`/projects/${project.slug}`}>View project <ArrowUpRight size={16} aria-hidden="true" /></a>
-                    <button type="button" className="button button-plain" disabled={Boolean(busy)} onClick={() => change(project, 'close')}>Close project</button>
+                    <button type="button" className="button button-plain" disabled={Boolean(busy) || Boolean(editor)} onClick={() => change(project, 'close')}>Close project</button>
                   </>
                 )}
               </div>
             </article>
           ))}
         </div>
-      ) : !editing && <div className="empty-state"><FilePenLine size={30} strokeWidth={1.6} aria-hidden="true" /><h2>No projects yet</h2></div>}
+      ) : !editor && <div className="empty-state"><FilePenLine size={30} strokeWidth={1.6} aria-hidden="true" /><h2>No projects yet</h2></div>}
     </div>
   );
 }
@@ -192,6 +242,8 @@ function ReviewCard({ project, onDecision }) {
   const [error, setError] = useState(null);
   const saving = useRef(false);
   const proof = officialUrl(project.proofUrl);
+  const { profile } = project;
+  const website = officialUrl(profile?.websiteUrl);
 
   async function decide(event) {
     event.preventDefault();
@@ -220,8 +272,20 @@ function ReviewCard({ project, onDecision }) {
     <article className="record-card review-card">
       <span className="record-status" data-status="submitted">Under review</span>
       <h2>{project.title}</h2>
-      <p>{project.organization} · {project.location} · {fieldName(project.field)}</p>
+      <p>{listingLabel(project.listingType)} · {project.location} · {fieldName(project.field)}</p>
       <Deadline date={project.endsAt} />
+      {project.schedule && <p>{project.schedule}</p>}
+      <section className="review-profile" aria-label="Submitted organizer profile">
+        <h3>Submitted profile</h3>
+        <p><strong>{profile?.name ?? project.organization}</strong>
+          {profile && ` · ${profileKinds.find(({ id }) => id === profile.kind)?.label}`}
+          {profile?.location && ` · ${profile.location}`}
+        </p>
+        {profile?.bio && <p className="review-story">{profile.bio}</p>}
+        {website && <a className="back-link" href={website} target="_blank" rel="noopener noreferrer">
+          {new URL(website).hostname} <ArrowUpRight size={15} aria-hidden="true" />
+        </a>}
+      </section>
       <p>{project.summary}</p>
       <p className="review-story">{project.story}</p>
       <ul className="review-needs">

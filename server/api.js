@@ -97,6 +97,7 @@ export function createApi(store, { demo = false, secureCookies = false, clerk } 
     : { mode: 'local' }));
   api.get('/projects', (_req, res) => res.json({ projects: store.listPublic(demo) }));
   api.get('/projects/:slug', (req, res) => res.json({ project: store.getPublic(req.params.slug, demo) }));
+  api.get('/profiles/:slug', (req, res) => res.json(store.getPublicProfile(req.params.slug, demo)));
 
   if (clerk) {
     api.use(clerk.middleware);
@@ -136,6 +137,12 @@ export function createApi(store, { demo = false, secureCookies = false, clerk } 
       res.json({ ok: true });
     });
   }
+
+  api.get('/mine/profiles', signedIn, (req, res) => res.json({ profiles: store.listOwnedProfiles(req.member.id) }));
+  api.post('/mine/profiles', signedIn, (req, res) =>
+    res.status(201).json({ profile: store.createProfile(req.member.id, body(req)) }));
+  api.patch('/mine/profiles/:id', signedIn, (req, res) =>
+    res.json({ profile: store.updateProfile(req.member.id, req.params.id, body(req)) }));
 
   api.post('/projects', signedIn, (req, res) =>
     res.status(201).json({ project: store.createProject(req.member.id, body(req)) }));

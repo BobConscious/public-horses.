@@ -13,3 +13,14 @@ export const supportKinds = [
   { id: 'time', label: 'Time', description: 'Give time to help with a specific task.' },
   { id: 'skills', label: 'Skills', description: 'Share a skill the organizer needs.' },
 ];
+
+export const listingTypes = [
+  { id: 'project', label: 'Project' },
+  { id: 'volunteer', label: 'Volunteer opportunity' },
+  { id: 'event', label: 'Event' },
+];
+
+export const profileKinds = [
+  { id: 'person', label: 'Person' },
+  { id: 'organization', label: 'Organization' },
+];

@@ -42,6 +42,43 @@ CREATE TABLE IF NOT EXISTS projects (
 ) STRICT;
 CREATE INDEX IF NOT EXISTS projects_by_owner ON projects(owner_id, updated_at);
 CREATE INDEX IF NOT EXISTS projects_directory ON projects(status, ends_at);
+CREATE UNIQUE INDEX IF NOT EXISTS projects_owner_identity ON projects(id, owner_id);
+
+CREATE TABLE IF NOT EXISTS profiles (
+  id TEXT PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
+  owner_id TEXT NOT NULL REFERENCES members(id),
+  kind TEXT NOT NULL CHECK (kind IN ('person', 'organization')),
+  demo INTEGER NOT NULL DEFAULT 0 CHECK (demo IN (0, 1)),
+  legacy_name TEXT,
+  UNIQUE (id, owner_id),
+  UNIQUE (owner_id, demo, legacy_name)
+) STRICT;
+CREATE INDEX IF NOT EXISTS profiles_by_owner ON profiles(owner_id);
+CREATE UNIQUE INDEX IF NOT EXISTS person_profile_per_owner ON profiles(owner_id) WHERE kind = 'person';
+
+CREATE TABLE IF NOT EXISTS profile_revisions (
+  profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  version INTEGER NOT NULL CHECK (version >= 1),
+  name TEXT NOT NULL,
+  bio TEXT NOT NULL,
+  location TEXT NOT NULL,
+  website_url TEXT NOT NULL,
+  PRIMARY KEY (profile_id, version)
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS project_profiles (
+  project_id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  profile_id TEXT NOT NULL,
+  profile_version INTEGER NOT NULL,
+  listing_type TEXT NOT NULL DEFAULT 'project' CHECK (listing_type IN ('project', 'volunteer', 'event')),
+  schedule TEXT NOT NULL DEFAULT '',
+  FOREIGN KEY (project_id, owner_id) REFERENCES projects(id, owner_id) ON DELETE CASCADE,
+  FOREIGN KEY (profile_id, owner_id) REFERENCES profiles(id, owner_id),
+  FOREIGN KEY (profile_id, profile_version) REFERENCES profile_revisions(profile_id, version)
+) STRICT;
+CREATE INDEX IF NOT EXISTS projects_by_profile ON project_profiles(profile_id, profile_version);
 
 CREATE TABLE IF NOT EXISTS needs (
   project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

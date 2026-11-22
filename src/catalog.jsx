@@ -1,44 +1,58 @@
 import { useRef, useState } from 'react';
 import { ArrowLeft, ArrowUpRight, CircleCheck, Search, X } from 'lucide-react';
-import { fields } from '../shared/catalog.js';
+import { fields, listingTypes } from '../shared/catalog.js';
 import { useApi } from './http.js';
 import { signInLink } from './auth.jsx';
-import { dateLabel, Deadline, EmptyProjects, ErrorNotice, LoadState, fieldName, kindName, officialUrl, useLoad } from './ui.jsx';
+import { dateLabel, Deadline, EmptyProjects, ErrorNotice, LoadState, fieldName, kindName, listingTypeName, officialUrl, useLoad } from './ui.jsx';
 
 const fieldFilters = [{ id: 'all', label: 'All fields' }, ...fields];
 
-function ProjectListing({ project }) {
+function ProjectOrganizer({ project }) {
+  if (!project.profile) return <strong>{project.organization}</strong>;
+  return <a className="profile-link" href={`/profiles/${encodeURIComponent(project.profile.slug)}`}>{project.profile.name}</a>;
+}
+
+function ProjectCard({ project, heading: Heading }) {
   return (
-    <article className="project-listing">
-      <div>
-        <h2><a href={`/projects/${project.slug}`}>{project.title}</a></h2>
-        <p className="project-byline"><strong>{project.organization}</strong> <span>{project.location}</span></p>
-        <p className="project-summary">{project.summary}</p>
-      </div>
-      <div className="project-facts">
-        <span className="field-label">{fieldName(project.field)}</span>
-        <span>{project.needs.map(({ type }) => kindName(type)).join(', ')}</span>
-        {project.endsAt && <span>By <time dateTime={project.endsAt}>{dateLabel(project.endsAt)}</time></span>}
-      </div>
+    <article className="project-card">
+      <p className="project-card-type"><strong>{listingTypeName(project.listingType)}</strong><span>{fieldName(project.field)}</span></p>
+      <Heading><a href={`/projects/${project.slug}`}>{project.title}</a></Heading>
+      <p className="project-byline">By <ProjectOrganizer project={project} /></p>
+      <p className="project-summary">{project.summary}</p>
+      <dl className="project-facts">
+        {project.location && <div><dt>Where</dt><dd>{project.location}</dd></div>}
+        {project.schedule && <div><dt>When</dt><dd>{project.schedule}</dd></div>}
+        <div><dt>Ways to help</dt><dd>{project.needs.map(({ type }) => kindName(type)).join(', ')}</dd></div>
+        {project.endsAt && !project.demo && <div><dt>Listing closes</dt><dd><time dateTime={project.endsAt}>{dateLabel(project.endsAt)}</time></dd></div>}
+      </dl>
     </article>
   );
+}
+
+export function ProjectCards({ projects, heading = 'h2' }) {
+  return <div className="project-cards">{projects.map((project) => <ProjectCard key={project.id} project={project} heading={heading} />)}</div>;
 }
 
 export function HomePage() {
   const load = useLoad('/projects');
   const [field, setField] = useState('all');
+  const [listingType, setListingType] = useState('all');
   const [search, setSearch] = useState('');
   const terms = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const projects = load.data?.projects ?? [];
+  const filtered = field !== 'all' || listingType !== 'all' || terms.length > 0;
   const matches = projects.filter((project) => {
     if (field !== 'all' && project.field !== field) return false;
-    const words = [project.title, project.organization, project.location, project.summary, fieldName(project.field),
+    if (listingType !== 'all' && (project.listingType ?? 'project') !== listingType) return false;
+    const words = [project.title, project.profile?.name ?? project.organization, project.location, project.summary,
+      fieldName(project.field), listingTypeName(project.listingType), project.schedule,
       ...project.needs.map(({ type, detail }) => `${kindName(type)} ${detail}`)].join(' ').toLowerCase();
     return terms.every((term) => words.includes(term));
   });
 
   function resetFilters() {
     setField('all');
+    setListingType('all');
     setSearch('');
   }
 
@@ -61,6 +75,13 @@ export function HomePage() {
               <input id="project-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Try pantry" />
               {search && <button type="button" aria-label="Clear search" onClick={() => setSearch('')}><X size={16} aria-hidden="true" /></button>}
             </div>
+            <label className="catalog-type-label">
+              Listing type
+              <select value={listingType} onChange={(event) => setListingType(event.target.value)}>
+                <option value="all">All listings</option>
+                {listingTypes.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
+              </select>
+            </label>
             <fieldset className="field-filters">
               <legend>Filter by field</legend>
               <div className="field-options">
@@ -73,9 +94,8 @@ export function HomePage() {
           <div className="catalog-results">
             {!load.data ? <LoadState state={load} /> : (
               <>
-                <p className="result-count" role="status">{matches.length} {matches.length === 1 ? 'project' : 'projects'}</p>
-                {matches.length ? <div className="project-list">{matches.map((project) => <ProjectListing key={project.id} project={project} />)}</div>
-                  : <EmptyProjects filtered={field !== 'all' || terms.length > 0} onReset={resetFilters} />}
+                <p className="result-count" role="status">{matches.length} {matches.length === 1 ? 'listing' : 'listings'}</p>
+                {matches.length ? <ProjectCards projects={matches} /> : <EmptyProjects filtered={filtered} onReset={resetFilters} />}
               </>
             )}
           </div>
@@ -216,13 +236,15 @@ export function ProjectPage({ slug, user, sessionReady }) {
           <section className="project-intro">
             <h1>{project.title}</h1>
             <div className="detail-bylines">
-              <strong>{project.organization}</strong>
+              <ProjectOrganizer project={project} />
               <span>{project.location}</span>
+              <span>{listingTypeName(project.listingType)}</span>
               <span className="field-label">{fieldName(project.field)}</span>
-              <Deadline date={project.endsAt} />
+              {!project.demo && <Deadline date={project.endsAt} />}
             </div>
+            {project.schedule && <p className="project-schedule">{project.schedule}</p>}
             <p>{project.summary}</p>
-            {project.demo && <p className="project-example">Fictional project. Links to the organizer are disabled.</p>}
+            {project.demo && <p className="project-example">Preview listing. Organizer action links are disabled.</p>}
           </section>
 
           <div className="project-body">

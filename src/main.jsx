@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react';
 import { api } from './http.js';
 import { AccountPage } from './auth.jsx';
 import { HomePage, ProjectPage, clearSupportAttempts } from './catalog.jsx';
+import { ProfilePage } from './profiles.jsx';
 import { Review, Workspace } from './workspace.jsx';
 import { ErrorNotice, LoadState, useLoad } from './ui.jsx';
 import './styles.css';
@@ -42,7 +43,7 @@ function Header({ path, user, signedIn = Boolean(user), onSignOut = signOutLocal
   }
 
   function current(route) {
-    return path === route || route === '/' && path.startsWith('/projects/') ? 'page' : undefined;
+    return path === route || route === '/' && /^\/(projects|profiles)\//.test(path) ? 'page' : undefined;
   }
 
   return (
@@ -91,6 +92,7 @@ function NotFound() {
 function App({ AuthPage = AccountPage, onSignOut, clerkSessionId }) {
   const path = window.location.pathname.replace(/\/$/, '') || '/';
   const projectPath = /^\/projects\/([a-z0-9-]+)$/.exec(path);
+  const profilePath = /^\/profiles\/([a-z0-9-]+)$/.exec(path);
   const isAuthPage = path === '/sign-in' || path === '/sign-up';
   const guestClerkSession = clerkSessionId === null;
   const clerkSignedIn = typeof clerkSessionId === 'string';
@@ -103,6 +105,7 @@ function App({ AuthPage = AccountPage, onSignOut, clerkSessionId }) {
   let page;
   if (path === '/') page = <HomePage />;
   else if (projectPath) page = <ProjectPage slug={projectPath[1]} user={user} sessionReady={sessionReady} />;
+  else if (profilePath) page = <ProfilePage slug={profilePath[1]} />;
   else if (path === '/garden') page = <Garden user={user} />;
   else if (path === '/workspace') page = <Workspace user={user} sessionReady={sessionReady} />;
   else if (path === '/review') page = <Review user={user} sessionReady={sessionReady} />;
@@ -112,7 +115,7 @@ function App({ AuthPage = AccountPage, onSignOut, clerkSessionId }) {
   return (
     <>
       <Header path={path} user={user} signedIn={clerkSignedIn || Boolean(user)} onSignOut={onSignOut} />
-      {session.data?.demo && <p className="demo-notice"><span className="container">Demo preview. Projects are fictional.</span></p>}
+      {session.data?.demo && <p className="demo-notice"><span className="container">Demo preview. Listings and profiles are examples.</span></p>}
       {path === '/garden' && sessionReady && !memberUnavailable ? page : (
         <main id="main" className="site-main">
           {session.error ? <div className="container page-panel"><LoadState state={session} /></div>

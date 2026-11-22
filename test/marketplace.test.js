@@ -162,7 +162,7 @@ test('a file-backed store retains fixtures across restarts', () => {
     }
     const second = createStore(database);
     try {
-      assert.equal(second.listPublic(true).length, 3);
+      assert.equal(second.listPublic(true).length, 5);
       assert.equal(second.listPublic(false).length, 0);
     } finally {
       second.close();

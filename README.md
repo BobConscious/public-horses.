@@ -11,7 +11,7 @@ npm ci
 npm run demo
 ```
 
-Open [the local demo](http://127.0.0.1:4173). It uses three fictional projects with sample links and its own database. Create two local accounts to rehearse organizer and reviewer roles.
+Open [the local demo](http://127.0.0.1:4173). It uses five example listings and its own database. The listings include a volunteer request, a monthly event, and a fictional personal profile. Create two local accounts to rehearse organizer and reviewer roles.
 
 ```sh
 npm run reviewer -- --demo reviewer@example.org
@@ -23,7 +23,7 @@ The reviewer command grants access to an existing account. Run `npm run dev` for
 
 ## Private Vercel preview
 
-Enable Vercel Authentication on the preview project before deploying. Open the deployment URL that Vercel generates. The preview uses fictional projects. Use a test account to try the garden. Vercel can clear preview records when it restarts the function.
+Enable Vercel Authentication on the preview project before deploying. Open the deployment URL that Vercel generates. Use a test account to try the workspace and garden. Vercel can clear preview records when it restarts the function.
 
 ## Connect Clerk
 
@@ -58,8 +58,8 @@ For hosting, set the exact HTTPS origin. Rehearse with development keys and use 
 
 ## How the marketplace works
 
-1. **Organize.** Draft an ask for funding, supplies, time, or skills. Add an end date, the official support links, and a private source for review.
-2. **Review.** A separate reviewer checks that the ask and links belong to the organizer. Publish the submitted version or return it with a reason. The organizer can revise returned work. Expired and closed asks leave the directory.
+1. **Organize.** Create a person or organization profile in the workspace. Use it to list a project, volunteer opportunity, or event. Add a schedule when it helps. Provide an end date, official support links, and a private source for review.
+2. **Review.** A separate reviewer checks the submitted listing and profile. Approval makes that version public. Later profile edits stay private until a reviewer approves a listing that uses them. Expired and closed listings leave the directory.
 3. **Support.** Filter by field and open a specific ask. Give through the organizer’s own channel. Sign in to record help you already gave and choose an intention.
 4. **Grow.** Each saved act earns one private seed. Plant it, water it once a day, and harvest after three waterings. Your account keeps the garden and its optional notes.
 

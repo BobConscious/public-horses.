@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fields, supportKinds } from '../shared/catalog.js';
+import { fields, listingTypes, profileKinds, supportKinds } from '../shared/catalog.js';
 import { useApi } from './http.js';
 
 export function fieldName(id) {
@@ -8,6 +8,14 @@ export function fieldName(id) {
 
 export function kindName(id) {
   return supportKinds.find((kind) => kind.id === id)?.label ?? id;
+}
+
+export function listingTypeName(id) {
+  return listingTypes.find((type) => type.id === id)?.label ?? 'Project';
+}
+
+export function profileKindName(id) {
+  return profileKinds.find((kind) => kind.id === id)?.label ?? 'Profile';
 }
 
 export function useLoad(path) {
@@ -74,7 +82,7 @@ export function EmptyProjects({ filtered, onReset }) {
   return (
     <div className="empty-state">
       <h2>{filtered ? 'No matching projects' : 'No open projects yet'}</h2>
-      <p>{filtered ? 'Try a different field or search term.' : 'Projects appear here after review.'}</p>
+      <p>{filtered ? 'Change a filter or search term.' : 'Projects appear here after review.'}</p>
       {filtered && <button className="button button-outline" type="button" onClick={onReset}>Clear filters</button>}
     </div>
   );
