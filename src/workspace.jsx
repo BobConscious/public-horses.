@@ -101,9 +101,9 @@ function ProjectEditor({ project, onSaved, onCancel }) {
             );
           })}
         </fieldset>
-        <label>Proof link for the reviewer
+        <label>Link that confirms the request
           <input name="proofUrl" required type="url" placeholder="https://" defaultValue={project?.proofUrl} />
-          <span className="field-hint">Use a page from the organizer that confirms the request. The reviewer sees this link.</span>
+          <span className="field-hint">Use a page from the organizer. This link stays off the public project page.</span>
         </label>
         <ErrorNotice error={error} />
         <div className="form-actions">
@@ -130,7 +130,7 @@ function WorkspaceProjects() {
     setBusy(project.id);
     try {
       await api(`/mine/projects/${encodeURIComponent(project.id)}/${action}`, { method: 'POST', body: { version: project.version } });
-      setMessage(action === 'submit' ? 'Your project is in the review queue.' : 'Project closed.');
+      setMessage(action === 'submit' ? 'Project sent for review.' : 'Project closed.');
       list.reload();
     } catch (failure) {
       setError(failure);
@@ -142,13 +142,13 @@ function WorkspaceProjects() {
 
   return (
     <div className="workspace-page container">
-      <div className="workspace-title"><div><h1>Your projects</h1><p>Draft a request, submit it for review, and track its status.</p></div>
+      <div className="workspace-title"><div><h1>Your projects</h1><p>A reviewer checks each request before it can appear in the directory.</p></div>
         {!editing && <button className="button button-primary" type="button" onClick={() => setEditing('new')}><Plus size={19} aria-hidden="true" /> New project</button>}
       </div>
       {message && <p className="notice" role="status">{message}</p>}
       <ErrorNotice error={error} />
       {editing && <ProjectEditor key={editing === 'new' ? 'new' : editing.id} project={editing === 'new' ? null : editing}
-        onSaved={() => { setEditing(null); setMessage('Draft saved. Submit it when you are ready.'); list.reload(); }} onCancel={() => setEditing(null)} />}
+        onSaved={() => { setEditing(null); setMessage('Draft saved.'); list.reload(); }} onCancel={() => setEditing(null)} />}
       {!list.data ? <LoadState state={list} /> : list.data.projects.length ? (
         <div className="record-list">
           {list.data.projects.map((project) => (
@@ -174,14 +174,14 @@ function WorkspaceProjects() {
             </article>
           ))}
         </div>
-      ) : !editing && <div className="empty-state"><FilePenLine size={30} strokeWidth={1.6} aria-hidden="true" /><h2>No projects yet</h2><p>Create a draft when your organization has a specific request.</p></div>}
+      ) : !editing && <div className="empty-state"><FilePenLine size={30} strokeWidth={1.6} aria-hidden="true" /><h2>No projects yet</h2></div>}
     </div>
   );
 }
 
 export function Workspace({ user, sessionReady }) {
   if (!sessionReady) return <p className="loading container" role="status">Checking your session…</p>;
-  if (!user) return <SignedOut path="/workspace" title="Start a project">Share a specific need from your community. Sign in to create a draft.</SignedOut>;
+  if (!user) return <SignedOut path="/workspace" title="Start a project">Sign in to draft a request for funding, supplies, time, or skills.</SignedOut>;
   return <WorkspaceProjects />;
 }
 
@@ -248,14 +248,14 @@ function ReviewQueue() {
   const [message, setMessage] = useState('');
   return (
     <div className="workspace-page container">
-      <div className="workspace-title"><div><h1>Review requests</h1><p>Verify the organizer, proof, and direct support links before publishing.</p></div></div>
+      <div className="workspace-title"><div><h1>Review projects</h1><p>Before you publish, confirm who made the request and where people can help.</p></div></div>
       {message && <p className="notice" role="status">{message}</p>}
       {!list.data ? <LoadState state={list} /> : list.data.projects.length ? (
         <div className="record-list">
           {list.data.projects.map((project) => <ReviewCard key={`${project.id}/${project.version}`} project={project}
             onDecision={(decision) => { setMessage(decision === 'publish' ? 'Project published.' : 'Change request saved.'); list.reload(); }} />)}
         </div>
-      ) : <div className="empty-state"><ShieldCheck size={30} strokeWidth={1.6} aria-hidden="true" /><h2>No projects to review</h2><p>Submitted projects appear here.</p></div>}
+      ) : <div className="empty-state"><ShieldCheck size={30} strokeWidth={1.6} aria-hidden="true" /><h2>No projects to review</h2></div>}
     </div>
   );
 }

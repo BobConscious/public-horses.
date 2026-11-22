@@ -13,11 +13,28 @@
 }
 
 .garden-header {
+  position: relative;
+  isolation: isolate;
   display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 1.5rem;
+  flex-direction: column;
+  align-items: start;
+  justify-content: center;
+  gap: .7rem;
+  min-height: clamp(218px, 26vw, 300px);
+  padding-block: 1.25rem;
+  border-bottom: 1px solid var(--garden-border);
   margin-bottom: 2rem;
+}
+
+.garden-header::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 0 auto;
+  width: min(51%, 490px);
+  background: url('/art/swamp-azalea.jpg') 50% 30% / cover no-repeat;
+  mask-image: linear-gradient(to right, transparent, #000 25%, #000 93%, transparent);
+  mix-blend-mode: multiply;
+  content: '';
 }
 
 .garden-header h1 {
@@ -27,6 +44,7 @@
 }
 
 .garden-header p {
+  max-width: 30ch;
   margin: .8rem 0 0;
   color: var(--garden-muted);
   font-size: clamp(1rem, 2vw, 1.18rem);
@@ -36,11 +54,7 @@
   display: inline-flex;
   align-items: center;
   gap: .4rem;
-  margin-bottom: .2rem;
-  padding: .47rem .75rem;
-  border: 1px solid #d9dfd1;
-  border-radius: 3rem;
-  background: #ecf0e5;
+  padding: .24rem 0;
   color: #354d3b;
   font-size: .81rem;
   white-space: nowrap;
@@ -55,16 +69,12 @@
 }
 
 .garden-beds {
-  --bed-paper: #e9ead8;
   grid-area: beds;
   min-width: 0;
   padding: clamp(.85rem, 2.6vw, 1.55rem);
   border: 1px solid #c9cfb9;
-  border-radius: 1.25rem;
-  background:
-    radial-gradient(ellipse at 88% 4%, #d2dcc366 0, transparent 61%),
-    radial-gradient(ellipse at 3% 96%, #cdd6b575 0, transparent 65%),
-    var(--bed-paper);
+  border-radius: .25rem;
+  background: #e9ead8;
 }
 
 .garden-beds__header {
@@ -106,16 +116,12 @@
   justify-content: space-between;
   gap: .38rem;
   border: 1px solid #ad886d;
-  border-radius: .65rem;
-  background:
-    radial-gradient(at 19% 17%, #edd1af8c 0, transparent 60%),
-    radial-gradient(ellipse at 88% 99%, #b9845f50 0, transparent 63%),
-    #dac1a0;
+  border-radius: .28rem .58rem .34rem .46rem;
+  background: #ddc7a8;
   color: #503b2a;
   cursor: pointer;
   font: inherit;
   text-align: center;
-  box-shadow: 0 2px 0 #92765840, inset 0 0 0 .21rem #fff9df32;
   transition: box-shadow 150ms ease, border-color 150ms ease, transform 150ms ease;
 }
 
@@ -149,8 +155,8 @@
 .garden-plot__stage {
   min-height: 16px;
   padding: .16rem .46rem;
-  border-radius: 3rem;
-  background-color: #faf1dd82;
+  border-radius: .18rem;
+  background-color: #faf1dd;
   font-weight: 650;
 }
 
@@ -220,7 +226,7 @@
 .garden-journal__entries > li {
   padding: 1rem 1.1rem;
   border: 1px solid var(--garden-border);
-  border-radius: 1rem;
+  border-radius: .25rem;
   background: var(--garden-paper);
 }
 
@@ -441,8 +447,7 @@
 
 .garden-notice {
   max-width: 530px;
-  padding: 2rem clamp(1rem, 6vw, 3rem);
-  text-align: center;
+  padding: 1.25rem clamp(1rem, 4vw, 2rem);
 }
 
 .garden-notice svg,
@@ -621,7 +626,9 @@
 @media (max-width: 650px) {
   .garden-page { width: calc(100% - 30px); }
   .garden-layout { grid-template-areas: 'tools' 'beds'; grid-template-columns: minmax(0, 1fr); }
-  .garden-header { align-items: start; flex-direction: column; gap: .8rem; }
+  .garden-header { min-height: 204px; }
+  .garden-header::after { width: 52%; opacity: .54; }
+  .garden-header p { max-width: 24ch; }
   .garden-beds__plots { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .garden-pouch__list { max-height: 170px; }
 }

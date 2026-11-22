@@ -1,6 +1,6 @@
 import { lazy, StrictMode, Suspense, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowUpRight, Leaf, Menu, Sprout, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { api } from './http.js';
 import { AccountPage } from './auth.jsx';
 import { HomePage, ProjectPage, clearSupportAttempts } from './catalog.jsx';
@@ -10,7 +10,7 @@ import './styles.css';
 import Garden from './garden.jsx';
 
 function Wordmark() {
-  return <a href="/" className="wordmark"><span className="wordmark-symbol"><Sprout size={23} strokeWidth={1.85} aria-hidden="true" /></span>Public Horses</a>;
+  return <a href="/" className="wordmark"><span className="wordmark-mark" aria-hidden="true" />Public Horses</a>;
 }
 
 async function signOutLocal(user) {
@@ -51,7 +51,7 @@ function Header({ path, user, signedIn = Boolean(user), onSignOut = signOutLocal
         </button>
         <nav className="site-navigation" id="site-navigation" data-expanded={expanded} aria-label="Main navigation">
           <div className="nav-pages">
-            <a href="/#projects" aria-current={current('/')}>Explore</a>
+            <a href="/#projects" aria-current={current('/')}>Projects</a>
             <a href="/garden" aria-current={current('/garden')}>My garden</a>
             {user && <a href="/workspace" aria-current={current('/workspace')}>My projects</a>}
             {user?.reviewer && <a href="/review" aria-current={current('/review')}>Review</a>}
@@ -59,7 +59,7 @@ function Header({ path, user, signedIn = Boolean(user), onSignOut = signOutLocal
           <div className="nav-account">
             {signedIn ? <button type="button" className="button button-plain" disabled={signingOut} onClick={signOut}>Sign out</button>
               : <a href="/sign-in" className="button button-plain">Sign in</a>}
-            <a href="/workspace" className="button button-primary">Start a project <ArrowUpRight size={16} aria-hidden="true" /></a>
+            {!user && <a href="/workspace" className="button button-primary">Start a project</a>}
           </div>
         </nav>
       </div>
@@ -107,7 +107,7 @@ function App({ AuthPage = AccountPage, onSignOut, clerkSessionId }) {
   return (
     <>
       <Header path={path} user={user} signedIn={clerkSignedIn || Boolean(user)} onSignOut={onSignOut} />
-      {session.data?.demo && <div className="demo-notice"><Leaf size={14} aria-hidden="true" /> Demo workspace. The sample projects are fictional.</div>}
+      {session.data?.demo && <p className="demo-notice"><span className="container">Demo preview. Projects are fictional.</span></p>}
       {path === '/garden' && sessionReady && !memberUnavailable ? page : (
         <main id="main" className="site-main">
           {session.error ? <div className="container page-panel"><LoadState state={session} /></div>

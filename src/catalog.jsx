@@ -1,30 +1,24 @@
 import { useRef, useState } from 'react';
-import { ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, CircleCheck, Leaf, MapPin, Search, ShieldCheck, Sprout, X } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, CircleCheck, Search, X } from 'lucide-react';
 import { fields } from '../shared/catalog.js';
 import { useApi } from './http.js';
 import { signInLink } from './auth.jsx';
-import { Deadline, EmptyProjects, ErrorNotice, FieldIcon, LoadState, ProjectArt, fieldName, kindName, officialUrl, useLoad } from './ui.jsx';
+import { dateLabel, Deadline, EmptyProjects, ErrorNotice, LoadState, fieldName, kindName, officialUrl, useLoad } from './ui.jsx';
 
 const fieldFilters = [{ id: 'all', label: 'All fields' }, ...fields];
 
-function ProjectCard({ project }) {
+function ProjectListing({ project }) {
   return (
-    <article className="project-card">
-      <a className="card-photo-link" href={`/projects/${project.slug}`} tabIndex={-1} aria-hidden="true">
-        <ProjectArt project={project} />
-      </a>
-      <div className="project-card-body">
-        <div className="card-meta">
-          <span className="field-label"><FieldIcon id={project.field} size={15} /> {fieldName(project.field)}</span>
-          <span className="card-location"><MapPin size={14} aria-hidden="true" /> {project.location}</span>
-        </div>
-        <h3><a href={`/projects/${project.slug}`}>{project.title}</a></h3>
-        <p className="card-organizer">{project.organization}</p>
-        <p className="card-summary">{project.summary}</p>
-        <div className="card-footer">
-          <span>{project.needs.map(({ type }) => kindName(type)).join(' · ')}</span>
-          <a href={`/projects/${project.slug}`} className="card-action" aria-label={`View project: ${project.title}`}><ArrowUpRight size={19} aria-hidden="true" /></a>
-        </div>
+    <article className="project-listing">
+      <div>
+        <h2><a href={`/projects/${project.slug}`}>{project.title}</a></h2>
+        <p className="project-byline"><strong>{project.organization}</strong> <span>{project.location}</span></p>
+        <p className="project-summary">{project.summary}</p>
+      </div>
+      <div className="project-facts">
+        <span className="field-label">{fieldName(project.field)}</span>
+        <span>{project.needs.map(({ type }) => kindName(type)).join(', ')}</span>
+        {project.endsAt && <span>By <time dateTime={project.endsAt}>{dateLabel(project.endsAt)}</time></span>}
       </div>
     </article>
   );
@@ -50,46 +44,41 @@ export function HomePage() {
 
   return (
     <>
-      <section className="hero">
-        <div className="hero-copy">
-          <span className="hero-id"><Sprout size={16} strokeWidth={1.75} aria-hidden="true" /> Kshetra</span>
-          <h1>Good grows<br /> here.</h1>
-          <p>Find a project that needs your help. Give directly, then grow a private garden of the good you do.</p>
-          <a className="button button-primary" href="#projects">Find a project <ArrowDownRight size={19} aria-hidden="true" /></a>
+      <section className="garden-entrance" aria-labelledby="home-heading">
+        <img className="garden-entrance-art" src="/art/thaxters-garden.jpg" alt="" width="1005" height="1440" fetchPriority="high" />
+        <div className="garden-entrance-copy container">
+          <h1 id="home-heading">Help a community project</h1>
+          <p>Give money, supplies, time, or skills directly to the people doing the work.</p>
+          <a className="button button-primary" href="#projects">Browse projects</a>
         </div>
-        <div className="hero-art" aria-hidden="true" />
       </section>
-
-      <section id="projects" className="catalog-section container" aria-labelledby="catalog-heading">
-        <div className="catalog-head">
-          <div><h2 id="catalog-heading">Find a way to help</h2><p>Choose a field to see what people need.</p></div>
-          <div className="search-box">
-            <Search size={19} strokeWidth={1.8} aria-hidden="true" />
-            <input type="search" aria-label="Search projects" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search projects" />
-            {search && <button type="button" aria-label="Clear search" onClick={() => setSearch('')}><X size={16} aria-hidden="true" /></button>}
+      <section id="projects" className="catalog-section container" aria-label="Project directory">
+        <div className="catalog-layout">
+          <div className="catalog-controls">
+            <label className="search-label" htmlFor="project-search">Search projects</label>
+            <div className="search-box">
+              <Search size={17} strokeWidth={1.8} aria-hidden="true" />
+              <input id="project-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Try pantry" />
+              {search && <button type="button" aria-label="Clear search" onClick={() => setSearch('')}><X size={16} aria-hidden="true" /></button>}
+            </div>
+            <fieldset className="field-filters">
+              <legend>Filter by field</legend>
+              <div className="field-options">
+                {fieldFilters.map(({ id, label }) => (
+                  <button key={id} type="button" aria-pressed={field === id} onClick={() => setField(id)}>{label}</button>
+                ))}
+              </div>
+            </fieldset>
           </div>
-        </div>
-        <div className="field-filters" aria-label="Filter by field">
-          {fieldFilters.map(({ id, label }) => (
-            <button key={id} type="button" aria-pressed={field === id} onClick={() => setField(id)}>
-              <FieldIcon id={id} /> {label}
-            </button>
-          ))}
-        </div>
-        {!load.data ? <LoadState state={load} /> : (
-          <>
-            <p className="result-count" role="status">{matches.length} {matches.length === 1 ? 'project' : 'projects'}</p>
-            {matches.length ? <div className="project-grid">{matches.map((project) => <ProjectCard key={project.id} project={project} />)}</div>
-              : <EmptyProjects filtered={field !== 'all' || terms.length > 0} onReset={resetFilters} />}
-          </>
-        )}
-      </section>
-
-      <section className="home-garden container">
-        <div className="home-garden-card">
-          <div className="home-garden-symbol"><Sprout size={50} strokeWidth={1.2} aria-hidden="true" /></div>
-          <div><h2>Make it a practice.</h2><p>Keep a private record of the ways you help. Plant each act as a seed and watch it grow.</p></div>
-          <a className="button button-outline" href="/garden">Visit my garden <ArrowRight size={17} aria-hidden="true" /></a>
+          <div className="catalog-results">
+            {!load.data ? <LoadState state={load} /> : (
+              <>
+                <p className="result-count" role="status">{matches.length} {matches.length === 1 ? 'project' : 'projects'}</p>
+                {matches.length ? <div className="project-list">{matches.map((project) => <ProjectListing key={project.id} project={project} />)}</div>
+                  : <EmptyProjects filtered={field !== 'all' || terms.length > 0} onReset={resetFilters} />}
+              </>
+            )}
+          </div>
         </div>
       </section>
     </>
@@ -175,9 +164,9 @@ function SupportForm({ project, user }) {
     return (
       <div className="support-saved" role="status">
         <CircleCheck size={32} aria-hidden="true" />
-        <h2>Your seed is ready.</h2>
-        <p>Your record is saved in your private garden.</p>
-        <a className="button button-primary" href="/garden">Plant my seed <ArrowRight size={17} aria-hidden="true" /></a>
+        <h2>Help recorded</h2>
+        <p>You earned a seed for your private garden.</p>
+        <a className="button button-primary" href="/garden">Open my garden</a>
       </div>
     );
   }
@@ -185,7 +174,7 @@ function SupportForm({ project, user }) {
   if (unavailable || !project.open && !attempt) {
     return (
       <div><ErrorNotice error={error ?? 'This project has closed.'} />
-        <a className="button button-outline" href="/garden">Check my garden <ArrowRight size={17} aria-hidden="true" /></a>
+        <a className="button button-outline" href="/garden">Open my garden</a>
       </div>
     );
   }
@@ -198,19 +187,19 @@ function SupportForm({ project, user }) {
             {project.needs.map(({ type: value }) => <option value={value} key={value}>{kindName(value)}</option>)}
           </select>
         </label>
-        <label>What would you like to cultivate?
+        <label>Choose a field for this seed
           <select value={intention} onChange={(event) => setIntention(event.target.value)} required>
             {fields.map(({ id, label }) => <option value={id} key={id}>{label}</option>)}
           </select>
         </label>
-        <label>Private reflection <span className="optional">Optional</span>
+        <label>Private note <span className="optional">Optional</span>
           <textarea rows={3} maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} />
         </label>
         <label className="check-field"><input type="checkbox" defaultChecked={Boolean(attempt)} required /> I already helped this project.</label>
       </fieldset>
       <ErrorNotice error={error} />
-      {error?.status === 401 ? <a className="button button-primary" href={signInLink(`/projects/${project.slug}`)}>Sign in to retry <ArrowRight size={17} aria-hidden="true" /></a>
-        : <button className="button button-primary" type="submit" disabled={pending}><Sprout size={18} aria-hidden="true" /> {pending ? 'Saving…' : attempt ? 'Retry save' : 'Save my act'}</button>}
+      {error?.status === 401 ? <a className="button button-primary" href={signInLink(`/projects/${project.slug}`)}>Sign in to retry</a>
+        : <button className="button button-primary" type="submit" disabled={pending}>{pending ? 'Saving…' : attempt ? 'Retry save' : 'Save record'}</button>}
     </form>
   );
 }
@@ -225,18 +214,15 @@ export function ProjectPage({ slug, user, sessionReady }) {
       {!project ? <LoadState state={load} /> : (
         <>
           <section className="project-intro">
-            <div className="project-intro-copy">
-              <span className="field-label"><FieldIcon id={project.field} /> {fieldName(project.field)}</span>
-              <h1>{project.title}</h1>
-              <p>{project.summary}</p>
-              <div className="detail-bylines">
-                <span className="detail-meta"><ShieldCheck size={17} aria-hidden="true" /> {project.organization}</span>
-                <span className="detail-meta"><MapPin size={17} aria-hidden="true" /> {project.location}</span>
-                <Deadline date={project.endsAt} />
-              </div>
-              {project.demo && <p className="notice">Sample project for demonstration.</p>}
+            <h1>{project.title}</h1>
+            <div className="detail-bylines">
+              <strong>{project.organization}</strong>
+              <span>{project.location}</span>
+              <span className="field-label">{fieldName(project.field)}</span>
+              <Deadline date={project.endsAt} />
             </div>
-            <ProjectArt project={project} className="detail-art" />
+            <p>{project.summary}</p>
+            {project.demo && <p className="project-example">Fictional project. Links to the organizer are disabled.</p>}
           </section>
 
           <div className="project-body">
@@ -253,8 +239,7 @@ export function ProjectPage({ slug, user, sessionReady }) {
                     return (
                       <li key={need.type}>
                         <div><h3>{kindName(need.type)}</h3><p>{need.detail}</p></div>
-                        {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="button button-outline">Visit organizer <ArrowUpRight size={17} aria-hidden="true" /></a>
-                          : project.demo && <span className="field-label">Demo request</span>}
+                        {url && <a href={url} target="_blank" rel="noopener noreferrer" className="button button-outline">Visit organizer <ArrowUpRight size={17} aria-hidden="true" /></a>}
                       </li>
                     );
                   })}
@@ -262,13 +247,12 @@ export function ProjectPage({ slug, user, sessionReady }) {
               </section>
             </div>
             <aside className="support-panel" aria-labelledby="support-heading">
-              <Leaf size={27} strokeWidth={1.5} aria-hidden="true" />
-              <h2 id="support-heading">I helped</h2>
+              <h2 id="support-heading">Record help</h2>
               {project.open || canRecover ? (
                 <>
-                  <p>Record what you did and save a seed for your garden.</p>
+                  <p>Save a record after you help. Each record earns a seed for your garden.</p>
                   {user ? <SupportForm key={`${project.id}/${user.id}`} project={project} user={user} />
-                    : sessionReady ? <a className="button button-primary" href={signInLink(`/projects/${project.slug}`)}>Sign in to record help <ArrowRight size={16} aria-hidden="true" /></a> : <p role="status">Checking your session…</p>}
+                    : sessionReady ? <a className="button button-primary" href={signInLink(`/projects/${project.slug}`)}>Sign in to record help</a> : <p role="status">Checking your session…</p>}
                 </>
               ) : <p>This project has closed.</p>}
             </aside>

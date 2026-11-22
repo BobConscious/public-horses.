@@ -113,7 +113,7 @@ function PlantDetails({ seed, busy, headingRef, onWater, onHarvest }) {
           >
             <Droplet size={17} aria-hidden="true" /> {wateredToday ? 'Watered today' : 'Water this plant'}
           </button>
-          {wateredToday && <p className="garden-help">Water again on the next UTC day.</p>}
+          {wateredToday && <p className="garden-help">Water again after midnight UTC.</p>}
         </>
       )}
     </section>
@@ -153,7 +153,7 @@ function SeedPouch({ seeds, selectedId, full, busy, headingRef, onPick }) {
         </>
       ) : (
         <>
-          <p className="garden-help">Record an act of support to add a seed.</p>
+          <p className="garden-help">Record your help on a project page to add a seed.</p>
           <a className="garden-text-link" href="/">Find a project <ArrowRight size={15} aria-hidden="true" /></a>
         </>
       )}
@@ -341,7 +341,7 @@ function MemberGarden() {
             {actionError && <p role="alert" className="garden-feedback garden-feedback--error">{actionError}</p>}
             <p role="status" className="garden-feedback">{status}</p>
             {!status && !actionError && <p className="garden-help">
-              {selectedSeed ? `Ready to plant a seed from ${selectedSeed.projectTitle}.` : 'Water a planted seed on three separate days to bring it into bloom.'}
+              {selectedSeed ? 'Choose an empty plot for this seed.' : 'Water a plant on three different days before you can harvest it.'}
             </p>}
           </div>
         </section>
@@ -357,13 +357,12 @@ export default function Garden({ user }) {
       <header className="garden-header">
         <div>
           <h1>Your garden</h1>
-          <p>Tend the seeds of the help you give.</p>
+          <p>Each time you record help, you get a seed to plant here.</p>
         </div>
-        <span className="garden-privacy"><LockKeyhole size={15} aria-hidden="true" /> Private to you</span>
+        <span className="garden-privacy"><LockKeyhole size={15} aria-hidden="true" /> Private</span>
       </header>
       {user ? <MemberGarden key={user.id} /> : (
-        <GardenNotice icon={Sprout} title="Open your garden">
-          <p>Sign in to plant seeds from the acts of care you record.</p>
+        <GardenNotice icon={Sprout} title="Sign in to see your garden">
           <a className="garden-button garden-button--solid" href="/sign-in?next=%2Fgarden">Sign in <ArrowRight size={16} aria-hidden="true" /></a>
         </GardenNotice>
       )}

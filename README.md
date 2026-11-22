@@ -73,4 +73,8 @@ A hosted copy needs a persistent volume for `PH_DB_PATH` and an HTTPS `PH_ORIGIN
 
 Fast for Hunger is the proposed first pilot partner. It can link to Nourishment projects after the meditation. Its registration, reports, and globe stay in its own system. Check after two cycles whether partners refresh their requests and supporters return between meditations.
 
-Demo imagery in [public/art](public/art) uses original ImageGen editorial illustrations of a community garden, pantry produce, shared tools, and books.
+## Artwork
+
+- [Thaxter’s Garden](https://americanart.si.edu/artwork/thaxters-garden-10067), Childe Hassam, 1892. Smithsonian American Art Museum.
+- [Swamp Azalea](https://americanart.si.edu/artwork/swamp-azalea-azalea-viscosa-26378), Mary Vaux Walcott, 1918. Smithsonian American Art Museum.
+- [Horse Head](https://fontawesome.com/icons/horse-head?f=classic&s=solid) from Font Awesome Free, Fonticons, Inc. [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
