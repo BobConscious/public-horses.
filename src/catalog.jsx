@@ -45,7 +45,7 @@ export function HomePage() {
   return (
     <>
       <section className="garden-entrance" aria-labelledby="home-heading">
-        <img className="garden-entrance-art" src="/art/thaxters-garden.jpg" alt="" width="1005" height="1440" fetchPriority="high" />
+        <img className="garden-entrance-art" src="/art/flower-garden.jpg" alt="" width="1200" height="801" fetchPriority="high" />
         <div className="garden-entrance-copy container">
           <h1 id="home-heading">Help a community project</h1>
           <p>Give money, supplies, time, or skills directly to the people doing the work.</p>

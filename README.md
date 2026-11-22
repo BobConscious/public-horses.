@@ -75,6 +75,6 @@ Fast for Hunger is the proposed first pilot partner. It can link to Nourishment 
 
 ## Artwork
 
-- [Thaxter’s Garden](https://americanart.si.edu/artwork/thaxters-garden-10067), Childe Hassam, 1892. Smithsonian American Art Museum.
+- [Flower Garden and Bungalow, Bermuda](https://www.metmuseum.org/art/collection/search/11121), Winslow Homer, 1899. The Metropolitan Museum of Art.
 - [Swamp Azalea](https://americanart.si.edu/artwork/swamp-azalea-azalea-viscosa-26378), Mary Vaux Walcott, 1918. Smithsonian American Art Museum.
-- [Horse Head](https://fontawesome.com/icons/horse-head?f=classic&s=solid) from Font Awesome Free, Fonticons, Inc. [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- The horse mark adapts GDJ’s [Horse Head Silhouette](https://openclipart.org/detail/241416/horse-head-silhouette). [CC0](https://openclipart.org/share#licensing).

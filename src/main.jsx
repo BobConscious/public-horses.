@@ -10,7 +10,12 @@ import './styles.css';
 import Garden from './garden.jsx';
 
 function Wordmark() {
-  return <a href="/" className="wordmark"><span className="wordmark-mark" aria-hidden="true" />Public Horses</a>;
+  return (
+    <a href="/" className="wordmark">
+      <img className="wordmark-mark" src="/horse-mark.svg" width="34" height="34" alt="" />
+      Public Horses
+    </a>
+  );
 }
 
 async function signOutLocal(user) {

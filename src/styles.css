@@ -40,7 +40,7 @@ p { line-height: 1.62; }
 .site-header { border-bottom: 1px solid var(--line); background: var(--paper); position: relative; }
 .header-inner { min-height: 72px; display: flex; align-items: center; gap: clamp(24px, 4vw, 64px); }
 .wordmark { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; font: 700 25px/1 var(--font-display); letter-spacing: -.035em; }
-.wordmark-mark { width: 32px; height: 32px; flex: 0 0 auto; background: currentColor; mask: url('/horse-mark.svg') center / contain no-repeat; }
+.wordmark-mark { flex: 0 0 auto; }
 .site-navigation { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: 24px; }
 .nav-pages, .nav-account { display: flex; gap: 24px; align-items: center; white-space: nowrap; }
 .nav-pages a { font-size: 14px; font-weight: 550; color: var(--muted); }
@@ -58,7 +58,7 @@ p { line-height: 1.62; }
 .button-plain { background: transparent; }
 
 .garden-entrance { position: relative; display: grid; isolation: isolate; align-items: center; overflow: hidden; min-height: clamp(342px, 32vw, 438px); background: var(--cream); border-bottom: 1px solid var(--line); }
-.garden-entrance-art { position: absolute; z-index: -1; inset: 0 0 0 auto; width: min(67%, 1220px); height: 100%; object-fit: cover; object-position: 50% 68%; mask-image: linear-gradient(to right, transparent 9%, #000 45%); }
+.garden-entrance-art { position: absolute; z-index: -1; inset: 0 -18px 0 auto; width: min(67%, 1220px); height: 100%; object-fit: cover; object-position: 50% 58%; mask-image: linear-gradient(to right, transparent 9%, #000 45%); }
 .garden-entrance-copy { padding-block: 38px; }
 .garden-entrance h1 { max-width: 12ch; font-size: clamp(52px, 5.2vw, 83px); line-height: 1; letter-spacing: -.055em; text-wrap: balance; }
 .garden-entrance p { max-width: 33ch; margin-block: 16px 22px; font-size: clamp(16px, 1.4vw, 19px); color: #465346; }
@@ -189,7 +189,7 @@ p { line-height: 1.62; }
   .nav-pages a { padding: 4px 0; }
   .nav-account .button-plain { border-color: var(--line); }
   .garden-entrance { min-height: 0; }
-  .garden-entrance-art { width: 100%; height: clamp(168px, 28vw, 220px); mask-image: linear-gradient(to bottom, #000 74%, transparent); }
+  .garden-entrance-art { right: 0; width: 100%; height: clamp(168px, 28vw, 220px); object-position: 50% 65%; mask-image: linear-gradient(to bottom, #000 74%, transparent); }
   .garden-entrance-copy { padding-block: clamp(155px, 24vw, 194px) 30px; }
   .garden-entrance h1 { max-width: 16ch; font-size: clamp(43px, 9vw, 65px); text-wrap: initial; }
   .garden-entrance p { margin-block: 13px 16px; }
