@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { findPlace } from './places.js';
 import { emailAddress, expectVersion, profileInput, projectInput, requireThat, supportInput, text } from './validation.js';
 
 const schema = readFileSync(new URL('./schema.sql', import.meta.url), 'utf8');
@@ -54,7 +55,8 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
   const now = () => new Date(clock()).toISOString();
   const today = () => now().slice(0, 10);
   const byId = (id) => get('SELECT * FROM projects WHERE id = ?', id);
-  const projectLink = (id) => get('SELECT * FROM project_profiles WHERE project_id = ?', id);
+  const projectLink = (id) => get(`SELECT p.*, l.place_id FROM project_profiles p
+    LEFT JOIN project_places l ON l.project_id = p.project_id WHERE p.project_id = ?`, id);
   const seedById = (id) => get('SELECT * FROM seeds WHERE id = ?', id);
   const isOpen = (row, on) => row.status === 'published' && row.ends_at >= on;
   const clerkMemberRow = (issuer, subject) => get(`SELECT m.* FROM members m
@@ -156,6 +158,7 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
       id: row.id, slug: row.slug, title: row.title, organization: profile.name, profile, location: row.location,
       summary: row.summary, story: row.story, field: row.field, endsAt: row.ends_at, listingType: link.listing_type,
       schedule: link.schedule,
+      mapLocation: findPlace(link.place_id),
       image: image ? { alt: image.alt, url: internal
         ? `/api/project-images/${encodeURIComponent(row.id)}/preview`
         : `/api/projects/${encodeURIComponent(row.slug)}/image` } : null,
@@ -196,6 +199,16 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
     id, image.alt, image.bytes);
   }
 
+  function setProjectPlace(id, placeId) {
+    if (placeId === undefined) return;
+    if (placeId === null) {
+      run('DELETE FROM project_places WHERE project_id = ?', id);
+      return;
+    }
+    run(`INSERT INTO project_places(project_id, place_id) VALUES(?, ?)
+      ON CONFLICT(project_id) DO UPDATE SET place_id = excluded.place_id`, id, placeId);
+  }
+
   function replaceNeeds(id, needs) {
     run('DELETE FROM needs WHERE project_id = ?', id);
     for (const { type, detail, url } of needs) {
@@ -212,6 +225,7 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
     profile.name, data.location, data.summary, data.story, data.field, data.endsAt, data.proofUrl,
     status, version, art, demo, stamp, stamp);
     setProjectProfile(id, owner, profile, data.listingType, data.schedule);
+    setProjectPlace(id, data.placeId);
     replaceNeeds(id, data.needs);
     setProjectImage(id, image);
     return projectView(byId(id), stamp.slice(0, 10), true);
@@ -390,6 +404,7 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
         data.title, profile.name, data.location, data.summary, data.story, data.field, data.endsAt,
         data.proofUrl, fieldArt[data.field] ?? '', stamp, id);
         setProjectProfile(id, owner, profile, data.listingType, data.schedule);
+        setProjectPlace(id, data.placeId === undefined && data.location !== row.location ? null : data.placeId);
         replaceNeeds(id, data.needs);
         setProjectImage(id, image);
         return projectView(byId(id), on, true);
@@ -514,6 +529,7 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
           const profile = demoProfile(inputProfile, data.organization);
           if (existing) {
             setProjectProfile(id, demoOrganizer, profile, data.listingType, data.schedule);
+            setProjectPlace(id, data.placeId ?? null);
             setProjectImage(id, demoImage);
             continue;
           }

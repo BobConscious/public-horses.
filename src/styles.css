@@ -54,6 +54,13 @@ p { line-height: 1.62; }
 
 .catalog-section { padding-block: clamp(29px, 4vw, 55px) 69px; scroll-margin-top: 12px; }
 .catalog-layout { display: grid; grid-template-columns: minmax(180px, .33fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 76px); }
+.catalog-city { margin-top: var(--space-6); }
+.catalog-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+.catalog-toolbar .result-count { padding: 0; }
+.catalog-view { display: flex; gap: var(--space-2); }
+.catalog-view .button[aria-pressed='true'] { background: var(--forest); color: var(--on-forest); border-color: var(--forest); }
+.unmapped-listings { margin-top: var(--space-8); }
+.unmapped-listings h2 { margin-bottom: var(--space-3); font-size: clamp(24px, 3vw, 34px); }
 .result-count { padding-bottom: 8px; color: var(--muted); font-size: 14px; }
 .detail-bylines { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 13px; color: var(--muted); font-size: var(--text-control); }
 .field-label { color: var(--forest); font-weight: 700; }
@@ -80,6 +87,7 @@ p { line-height: 1.62; }
 .project-intro > p, .workspace-title p, .page-panel > p { color: var(--muted); font-size: 17px; }
 .project-intro > p { margin-top: 12px; max-width: 65ch; }
 .project-detail-image { display: block; max-width: 100%; max-height: 480px; margin-top: 22px; border-radius: var(--radius-panel); object-fit: contain; }
+.project-map-link { margin-top: var(--space-3); }
 .project-intro .project-example, .profile-header .project-example { color: #744a38; font-size: 14px; }
 .project-intro .project-schedule { color: var(--ink); font-weight: 650; }
 .detail-meta { font-size: 13px; color: var(--muted); }

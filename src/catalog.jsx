@@ -1,17 +1,82 @@
-import { useRef, useState } from 'react';
-import { ArrowLeft, ArrowUpRight, CircleCheck } from 'lucide-react';
+import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { ArrowLeft, ArrowUpRight, CircleCheck, List, MapPin } from 'lucide-react';
 import { fields } from '../shared/catalog.js';
 import { useApi } from './http.js';
 import { signInLink } from './auth.jsx';
-import { Button } from './components/controls.jsx';
+import { Button, Field } from './components/controls.jsx';
 import { filterListings, initialListingFilters, ListingFilters, ProjectCards, ProjectOrganizer } from './components/listings.jsx';
 import { Deadline, EmptyProjects, ErrorNotice, LoadState, fieldName, kindName, listingTypeName, officialUrl, useLoad } from './ui.jsx';
+
+const ProjectMap = lazy(() => import('./components/project-map.jsx'));
+
+class MapBoundary extends Component {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <>
+        <p className="notice" role="status">The map could not load. Browse the matching projects below.</p>
+        <ProjectCards projects={this.props.projects} />
+      </>
+    );
+  }
+}
+
+function MapResults({ projects }) {
+  const pinned = projects.filter(({ mapLocation }) => mapLocation);
+  const unpinned = projects.filter(({ mapLocation }) => !mapLocation);
+  return (
+    <>
+      {pinned.length > 0 ? (
+        <MapBoundary projects={pinned}>
+          <Suspense fallback={<p className="loading" role="status">Loading map…</p>}>
+            <ProjectMap projects={pinned} />
+          </Suspense>
+        </MapBoundary>
+      ) : <p className="notice">No matching listings have a map pin.</p>}
+      {unpinned.length > 0 && (
+        <section className="unmapped-listings" aria-labelledby="unmapped-heading">
+          <h2 id="unmapped-heading">Listings without pins</h2>
+          <ProjectCards projects={unpinned} heading="h3" />
+        </section>
+      )}
+    </>
+  );
+}
 
 export function HomePage() {
   const load = useLoad('/projects');
   const [filters, setFilters] = useState(initialListingFilters);
-  const filtered = filters.field !== 'all' || filters.type !== 'all' || Boolean(filters.query.trim());
-  const matches = filterListings(load.data?.projects ?? [], filters);
+  const [view, setView] = useState(() => new URLSearchParams(window.location.search).get('view') === 'map' ? 'map' : 'list');
+  const [city, setCity] = useState(() => new URLSearchParams(window.location.search).get('city') ?? '');
+  const directory = useRef(null);
+  const projects = load.data?.projects ?? [];
+  const cities = [...new Map(projects.filter(({ mapLocation }) => mapLocation)
+    .map(({ mapLocation }) => [mapLocation.id, mapLocation.label])).entries()]
+    .sort((left, right) => left[1].localeCompare(right[1]));
+  const selectedCity = cities.some(([id]) => id === city) ? city : '';
+  const filtered = Boolean(selectedCity || filters.query.trim() || filters.field !== 'all' || filters.type !== 'all');
+  const matches = filterListings(projects, filters).filter(({ mapLocation }) => !selectedCity || mapLocation?.id === selectedCity);
+
+  useEffect(() => {
+    if (window.location.hash === '#projects') directory.current?.scrollIntoView();
+  }, []);
+
+  function setDirectoryView(nextView, nextCity) {
+    setView(nextView);
+    setCity(nextCity);
+    const url = new URL(window.location.href);
+    if (nextView === 'map') url.searchParams.set('view', 'map');
+    else url.searchParams.delete('view');
+    if (nextCity) url.searchParams.set('city', nextCity);
+    else url.searchParams.delete('city');
+    window.history.replaceState(window.history.state, '', url);
+  }
 
   return (
     <>
@@ -23,14 +88,35 @@ export function HomePage() {
           <Button href="#projects">Browse projects</Button>
         </div>
       </section>
-      <section id="projects" className="catalog-section container" aria-label="Project directory">
+      <section id="projects" ref={directory} className="catalog-section container" aria-label="Project directory">
         <div className="catalog-layout">
-          <ListingFilters filters={filters} onChange={setFilters} />
+          <ListingFilters filters={filters} onChange={setFilters}>
+            {cities.length > 0 && <div className="catalog-city">
+              <Field as="select" label="City" value={selectedCity}
+                onChange={(event) => setDirectoryView(view, event.target.value)}>
+                <option value="">All cities</option>
+                {cities.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+              </Field>
+            </div>}
+          </ListingFilters>
           <div className="catalog-results">
             {!load.data ? <LoadState state={load} /> : (
               <>
-                <p className="result-count" role="status">{matches.length} {matches.length === 1 ? 'listing' : 'listings'}</p>
-                {matches.length ? <ProjectCards projects={matches} /> : <EmptyProjects filtered={filtered} onReset={() => setFilters(initialListingFilters)} />}
+                <div className="catalog-toolbar">
+                  <p className="result-count" role="status">{matches.length} {matches.length === 1 ? 'listing' : 'listings'}</p>
+                  <div className="catalog-view" role="group" aria-label="Directory view">
+                    <Button variant="outline" aria-pressed={view === 'list'} onClick={() => setDirectoryView('list', selectedCity)}>
+                      <List size={17} aria-hidden="true" /> List
+                    </Button>
+                    <Button variant="outline" aria-pressed={view === 'map'} onClick={() => setDirectoryView('map', selectedCity)}>
+                      <MapPin size={17} aria-hidden="true" /> Map
+                    </Button>
+                  </div>
+                </div>
+                {matches.length === 0 ? <EmptyProjects filtered={filtered} onReset={() => {
+                  setFilters(initialListingFilters);
+                  setDirectoryView(view, '');
+                }} /> : view === 'map' ? <MapResults projects={matches} /> : <ProjectCards projects={matches} />}
               </>
             )}
           </div>
@@ -179,6 +265,10 @@ export function ProjectPage({ slug, user, sessionReady }) {
             </div>
             {project.schedule && <p className="project-schedule">{project.schedule}</p>}
             <p>{project.summary}</p>
+            {project.mapLocation && <a className="back-link project-map-link"
+              href={`/?view=map&city=${encodeURIComponent(project.mapLocation.id)}#projects`}>
+              <MapPin size={16} aria-hidden="true" /> View {project.mapLocation.label} on the map
+            </a>}
             {project.demo && <p className="project-example">Preview listing. Organizer action links are disabled.</p>}
             {project.image && <img className="project-detail-image" src={project.image.url} alt={project.image.alt} decoding="async" />}
           </section>

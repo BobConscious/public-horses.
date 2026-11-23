@@ -15,14 +15,14 @@ export function filterListings(projects, { query, type, field }) {
     if (!terms.length) return true;
     const words = [
       project.title, project.profile?.name ?? project.organization, project.location,
-      project.summary, fieldName(project.field), listingTypeName(project.listingType), project.schedule,
+      project.summary, fieldName(project.field), listingTypeName(project.listingType), project.schedule, project.mapLocation?.label,
       ...project.needs.map(({ type: kind, detail }) => `${kindName(kind)} ${detail}`),
     ].join(' ').toLowerCase();
     return terms.every((term) => words.includes(term));
   });
 }
 
-export function ListingFilters({ filters, onChange }) {
+export function ListingFilters({ filters, onChange, children }) {
   const searchId = useId();
   const searchInput = useRef(null);
 
@@ -37,7 +37,7 @@ export function ListingFilters({ filters, onChange }) {
       <div className="search-box">
         <Search size={17} strokeWidth={1.8} aria-hidden="true" />
         <input ref={searchInput} id={searchId} type="search" value={filters.query}
-          onChange={(event) => onChange({ ...filters, query: event.target.value })} placeholder="Try pantry" />
+          onChange={(event) => onChange({ ...filters, query: event.target.value })} placeholder="Try pantry or a city" />
         {filters.query && <button type="button" aria-label="Clear search" onClick={clearSearch}><X size={16} aria-hidden="true" /></button>}
       </div>
       <label className="catalog-type-label">
@@ -47,6 +47,7 @@ export function ListingFilters({ filters, onChange }) {
           {listingTypes.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
         </select>
       </label>
+      {children}
       <fieldset className="field-filters">
         <legend>Filter by field</legend>
         <div className="field-options">

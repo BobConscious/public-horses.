@@ -69,6 +69,14 @@ For hosting, set the exact HTTPS origin. Rehearse with development keys and use 
 
 [Kiva’s discovery and support flow](https://www.kiva.org/about/how) and [partner review](https://www.kiva.org/about/due-diligence/lending-partners) informed this structure. Public Horses records self-reported support and sends givers to the organizer.
 
+## Project map
+
+Switch the project directory to **Map** to browse by city. Search and filters work in both views. Select a pin to see the listings in that city. Online listings and listings without a city appear below the map.
+
+Organizers can add or remove a city in the listing editor. The map shows the city center. Use the public location field and organizer links for venue details. A reviewer sees the selected city before publishing the listing.
+
+The app serves the map files from `public/maps/`. Refresh them with `node scripts/refresh-map-data.mjs`. The files use [Natural Earth 5.1.2](https://github.com/nvkelso/natural-earth-vector/releases/tag/v5.1.2) country, US state, and populated place data. Keep the source place IDs stable so existing listings retain their pins.
+
 ## Data and operation
 
 The React site and Express API run on one origin. SQLite stores accounts, sessions, projects, listing images, review decisions, and garden records. The demo and regular app use separate files in `.data/`. Launch a built copy with `npm run build` and `npm start`.

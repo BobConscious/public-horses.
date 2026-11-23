@@ -5,6 +5,7 @@ import { useApi } from './http.js';
 import { signInLink } from './auth.jsx';
 import { Deadline, ErrorNotice, LoadState, fieldName, kindName, officialUrl, useLoad } from './ui.jsx';
 import { Button, Checkbox, Field, Notice, StatusChip } from './components/controls.jsx';
+import { PlacePicker } from './components/place-picker.jsx';
 import { ProfileEditor, ProfileList } from './profile-editor.jsx';
 import { ListingImageEditor, ReviewListingImage, useListingImage, usePrivateListingImage } from './listing-image-editor.jsx';
 
@@ -24,6 +25,7 @@ function SignedOut({ path, title, children }) {
 function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel }) {
   const api = useApi();
   const image = useListingImage(project?.image);
+  const [place, setPlace] = useState(project?.mapLocation ?? null);
   const [needs, setNeeds] = useState(() => project?.needs ?? []);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
@@ -49,7 +51,8 @@ function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel 
       return;
     }
     const form = new FormData(event.currentTarget);
-    const body = { ...Object.fromEntries(form), needs, image: image.imagePayload(), ...(project && { version: project.version }) };
+    const body = { ...Object.fromEntries(form), needs, placeId: place?.id ?? null,
+      image: image.imagePayload(), ...(project && { version: project.version }) };
     submitting.current = true;
     setPending(true);
     setError(null);
@@ -89,10 +92,12 @@ function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel 
           <Field label="Last day to help" required type="date" name="endsAt" defaultValue={project?.endsAt} />
         </div>
         <div className="form-columns">
-          <Field label="Location" required name="location" maxLength={96} defaultValue={project?.location} />
+          <Field label="Location" required name="location" maxLength={96} defaultValue={project?.location}
+            hint="Enter the public location or write Online." />
           <Field label="Schedule" optional name="schedule" maxLength={200} defaultValue={project?.schedule}
             placeholder="For example, Saturdays at 10 a.m. ET" />
         </div>
+        <PlacePicker value={place} onChange={setPlace} disabled={pending} />
         <Field label="Short summary" as="textarea" required name="summary" rows={2} maxLength={200} defaultValue={project?.summary} />
         <Field label="Project description" as="textarea" required name="story" rows={5} maxLength={4000} defaultValue={project?.story} />
         <ListingImageEditor editor={image} pending={pending} />
@@ -264,6 +269,7 @@ function ReviewCard({ project, onDecision }) {
       <StatusChip status="submitted" />
       <h2>{project.title}</h2>
       <p>{listingLabel(project.listingType)} · {project.location} · {fieldName(project.field)}</p>
+      {project.mapLocation && <p><strong>City on the map</strong> · {project.mapLocation.label}</p>}
       <Deadline date={project.endsAt} />
       {project.schedule && <p>{project.schedule}</p>}
       <section className="review-profile" aria-label="Submitted organizer profile">
