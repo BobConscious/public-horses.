@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowUpRight, CircleCheck, List, MapPin } from 'lucide-react
 import { fields } from '../shared/catalog.js';
 import { useApi } from './http.js';
 import { signInLink } from './auth.jsx';
-import { Button, Field } from './components/controls.jsx';
+import { Button, Field, Notice } from './components/controls.jsx';
 import { filterListings, initialListingFilters, ListingFilters, ProjectCards, ProjectOrganizer } from './components/listings.jsx';
 import { Deadline, EmptyProjects, ErrorNotice, LoadState, fieldName, kindName, listingTypeName, officialUrl, useLoad } from './ui.jsx';
 
@@ -83,12 +83,15 @@ export function HomePage() {
       <section className="garden-entrance" aria-labelledby="home-heading">
         <img className="garden-entrance-art" src="/art/flower-garden.jpg" alt="" width="1200" height="801" fetchPriority="high" />
         <div className="garden-entrance-copy container">
-          <h1 id="home-heading">Help a community project</h1>
-          <p>Give money, supplies, time, or skills directly to the people doing the work.</p>
-          <Button href="#projects">Browse projects</Button>
+          <h1 id="home-heading">A board for service</h1>
+          <p>In the Public Horse story, a village pooled money for a horse anyone could use. Find or share opportunities for a lifetime of service.</p>
+          <div className="service-board-actions">
+            <Button href="#projects">Find a way to serve</Button>
+            <Button variant="outline" href="/workspace">Post a service opportunity</Button>
+          </div>
         </div>
       </section>
-      <section id="projects" ref={directory} className="catalog-section container" aria-label="Project directory">
+      <section id="projects" ref={directory} className="catalog-section container" aria-label="Service opportunities" tabIndex={-1}>
         <div className="catalog-layout">
           <ListingFilters filters={filters} onChange={setFilters}>
             {cities.length > 0 && <div className="catalog-city">
@@ -212,9 +215,9 @@ function SupportForm({ project, user }) {
     );
   }
 
-  if (unavailable || !project.open && !attempt) {
+  if (unavailable) {
     return (
-      <div><ErrorNotice error={error ?? 'This project has closed.'} />
+      <div><ErrorNotice error={error ?? 'This service request is unavailable.'} />
         <Button href="/garden" variant="outline">Open my garden</Button>
       </div>
     );
@@ -223,20 +226,19 @@ function SupportForm({ project, user }) {
   return (
     <form className="stack-form report-form" onSubmit={report}>
       <fieldset disabled={Boolean(attempt)}>
-        <label>How did you help?
+        <label>How did you serve?
           <select value={type} onChange={(event) => setType(event.target.value)} required>
             {project.needs.map(({ type: value }) => <option value={value} key={value}>{kindName(value)}</option>)}
           </select>
         </label>
-        <label>Choose a field for this seed
+        <label>What do you want to cultivate?
           <select value={intention} onChange={(event) => setIntention(event.target.value)} required>
             {fields.map(({ id, label }) => <option value={id} key={id}>{label}</option>)}
           </select>
         </label>
-        <label>Private note <span className="optional">Optional</span>
-          <textarea rows={3} maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} />
-        </label>
-        <label className="check-field"><input type="checkbox" defaultChecked={Boolean(attempt)} required /> I already helped this project.</label>
+        <Field label="What did you do?" optional hint="Only you can see this note." as="textarea"
+          rows={3} maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} />
+        <label className="check-field"><input type="checkbox" defaultChecked={Boolean(attempt)} required /> I already helped with this request.</label>
       </fieldset>
       <ErrorNotice error={error} />
       {error?.status === 401 ? <Button href={signInLink(`/projects/${project.slug}`)}>Sign in to retry</Button>
@@ -248,10 +250,9 @@ function SupportForm({ project, user }) {
 export function ProjectPage({ slug, user, sessionReady }) {
   const load = useLoad(`/projects/${encodeURIComponent(slug)}`);
   const project = load.data?.project;
-  const canRecover = project && user && !project.open && readAttempt(attemptKeyFor(user, project));
   return (
     <div className="detail-page container">
-      <a href="/#projects" className="back-link"><ArrowLeft size={17} aria-hidden="true" /> All projects</a>
+      <a href="/#projects" className="back-link"><ArrowLeft size={17} aria-hidden="true" /> Service board</a>
       {!project ? <LoadState state={load} /> : (
         <>
           <section className="project-intro">
@@ -265,44 +266,46 @@ export function ProjectPage({ slug, user, sessionReady }) {
             </div>
             {project.schedule && <p className="project-schedule">{project.schedule}</p>}
             <p>{project.summary}</p>
-            {project.mapLocation && <a className="back-link project-map-link"
-              href={`/?view=map&city=${encodeURIComponent(project.mapLocation.id)}#projects`}>
-              <MapPin size={16} aria-hidden="true" /> View {project.mapLocation.label} on the map
-            </a>}
             {project.demo && <p className="project-example">Preview listing. Organizer action links are disabled.</p>}
-            {project.image && <img className="project-detail-image" src={project.image.url} alt={project.image.alt} decoding="async" />}
+            {!project.open && <Notice>{project.fulfilledAt
+              ? 'The organizer marked this request fulfilled.' : 'This request is closed.'}</Notice>}
           </section>
 
           <div className="project-body">
             <div className="project-story">
-              <section aria-labelledby="story-heading">
-                <h2 id="story-heading">About the project</h2>
-                {project.story.split(/\n+/).filter(Boolean).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
-              </section>
               <section id="needs" aria-labelledby="needs-heading">
                 <h2 id="needs-heading">What they need</h2>
+                {project.completion && <div className="project-completion">
+                  <h3>What counts as complete</h3>
+                  <p>{project.completion}</p>
+                </div>}
                 <ul className="need-list">
                   {project.needs.map((need) => {
                     const url = project.open && !project.demo ? officialUrl(need.url) : null;
                     return (
                       <li key={need.type}>
                         <div><h3>{kindName(need.type)}</h3><p>{need.detail}</p></div>
-                        {url && <Button href={url} target="_blank" rel="noopener noreferrer" variant="outline">Visit organizer <ArrowUpRight size={17} aria-hidden="true" /></Button>}
+                        {url && <Button href={url} target="_blank" rel="noopener noreferrer">Respond to organizer <ArrowUpRight size={17} aria-hidden="true" /></Button>}
                       </li>
                     );
                   })}
                 </ul>
               </section>
+              <section aria-labelledby="story-heading">
+                <h2 id="story-heading">About the opportunity</h2>
+                {project.story.split(/\n+/).filter(Boolean).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                {project.mapLocation && <a className="back-link project-map-link"
+                  href={`/?view=map&city=${encodeURIComponent(project.mapLocation.id)}#projects`}>
+                  <MapPin size={16} aria-hidden="true" /> View {project.mapLocation.label} on the map
+                </a>}
+                {project.image && <img className="project-detail-image" src={project.image.url} alt={project.image.alt} decoding="async" />}
+              </section>
             </div>
             <aside className="support-panel" aria-labelledby="support-heading">
-              <h2 id="support-heading">Record help</h2>
-              {project.open || canRecover ? (
-                <>
-                  <p>Save a record after you help. Each record earns a seed for your garden.</p>
-                  {user ? <SupportForm key={`${project.id}/${user.id}`} project={project} user={user} />
-                    : sessionReady ? <Button href={signInLink(`/projects/${project.slug}`)}>Sign in to record help</Button> : <p role="status">Checking your session…</p>}
-                </>
-              ) : <p>This project has closed.</p>}
+              <h2 id="support-heading">Record past service</h2>
+              <p>If you already helped, record what you did. You’ll get a seed in your private garden.</p>
+              {user ? <SupportForm key={`${project.id}/${user.id}`} project={project} user={user} />
+                : sessionReady ? <Button href={signInLink(`/projects/${project.slug}`)}>Sign in to record service</Button> : <p role="status">Checking your session…</p>}
             </aside>
           </div>
         </>

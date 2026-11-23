@@ -85,6 +85,8 @@ export function projectInput(input, today, { demo = false } = {}) {
     placeId: projectPlaceId(input.placeId),
     summary: text(input.summary, 'Summary', 200),
     story: text(input.story, 'Story', 4000),
+    completion: input.completion === undefined ? undefined
+      : text(input.completion, 'What counts as complete', 280, { optional: true }),
     field,
     listingType,
     schedule: text(input.schedule, 'Schedule', 200, { optional: true }),

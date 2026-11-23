@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, BookOpen, Droplet, Leaf, LockKeyhole, Plus, Sprout } from 'lucide-react';
 import { fields } from '../shared/catalog.js';
 import { useApi } from './http.js';
+import { Button, Field } from './components/controls.jsx';
+import { ErrorNotice, kindName } from './ui.jsx';
 import './garden.css';
 
 const plotNumbers = Array.from({ length: 12 }, (_, index) => index + 1);
@@ -153,31 +155,90 @@ function SeedPouch({ seeds, selectedId, full, busy, headingRef, onPick }) {
         </>
       ) : (
         <>
-          <p className="garden-help">Record your help on a project page to add a seed.</p>
-          <a className="garden-text-link" href="/">Find a project <ArrowRight size={15} aria-hidden="true" /></a>
+          <p className="garden-help">Record an act of service to add a seed.</p>
+          <a className="garden-text-link" href="/#projects">Find a way to serve <ArrowRight size={15} aria-hidden="true" /></a>
         </>
       )}
     </section>
   );
 }
 
-function HarvestJournal({ seeds }) {
+function JournalEntry({ seed, onSave }) {
+  const [draft, setDraft] = useState(seed.reflection ?? '');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState('');
+  const saving = useRef(false);
+  const summary = useRef(null);
+
+  async function save(reflection) {
+    if (saving.current) return;
+    saving.current = true;
+    setPending(true);
+    setError(null);
+    setStatus('');
+    try {
+      const stored = await onSave(seed.id, reflection);
+      setDraft(stored);
+      setStatus(stored ? 'Observation saved.' : 'Observation cleared.');
+      summary.current?.focus();
+    } catch (failure) {
+      setError(failure);
+    } finally {
+      setPending(false);
+      saving.current = false;
+    }
+  }
+
+  return (
+    <li>
+      <h3>{seed.projectTitle}</h3>
+      <time dateTime={seed.createdAt}>{dateFormat.format(new Date(seed.createdAt))}</time>
+      <dl className="garden-journal__act">
+        <div>
+          <dt>What you wanted to cultivate</dt>
+          <dd><span className="garden-intention">{fieldLabel(seed.intention)}</span></dd>
+        </div>
+        <div>
+          <dt>What you did</dt>
+          <dd>{kindName(seed.type)}{seed.note && <p className="garden-reflection">{seed.note}</p>}</dd>
+        </div>
+        {seed.reflection && <div>
+          <dt>What you noticed later</dt>
+          <dd className="garden-reflection">{seed.reflection}</dd>
+        </div>}
+      </dl>
+      {seed.harvestedAt && <p className="garden-journal__harvest">
+        Harvested <time dateTime={seed.harvestedAt}>{dateFormat.format(new Date(seed.harvestedAt))}</time>
+      </p>}
+      <details className="garden-observation">
+        <summary ref={summary}>{seed.reflection ? 'Edit observation' : 'Add observation'}</summary>
+        <form className="stack-form" onSubmit={(event) => { event.preventDefault(); save(draft); }}>
+          <Field label="What did you notice later?" as="textarea" optional maxLength={500} rows={3}
+            value={draft} onChange={(event) => setDraft(event.target.value)} disabled={pending} />
+          <ErrorNotice error={error} />
+          <div className="form-actions">
+            <Button type="submit" disabled={pending || (!draft.trim() && !seed.reflection)}>{pending ? 'Saving…' : 'Save observation'}</Button>
+            {seed.reflection && <Button variant="plain" disabled={pending} onClick={() => save('')}>Clear observation</Button>}
+          </div>
+        </form>
+      </details>
+      <p role="status" className="garden-feedback">{status}</p>
+    </li>
+  );
+}
+
+function ServiceJournal({ seeds, onSave }) {
   if (!seeds.length) return null;
   return (
-    <section className="garden-journal" aria-labelledby="garden-journal-title">
+    <section id="service-journal" tabIndex={-1} className="garden-journal" aria-labelledby="garden-journal-title">
       <div className="garden-panel__heading">
         <span className="garden-panel__icon"><BookOpen size={18} aria-hidden="true" /></span>
-        <h2 id="garden-journal-title">Harvest journal</h2>
+        <h2 id="garden-journal-title">Service journal</h2>
       </div>
+      <p className="garden-help">Return to an act of service and reflect on what you notice over time.</p>
       <ul className="garden-journal__entries">
-        {seeds.map((seed) => (
-          <li key={seed.id}>
-            <span className="garden-intention">{fieldLabel(seed.intention)}</span>
-            <h3>{seed.projectTitle}</h3>
-            {seed.note && <p className="garden-reflection">{seed.note}</p>}
-            <time dateTime={new Date(seed.harvestedAt).toISOString()}>{dateFormat.format(new Date(seed.harvestedAt))}</time>
-          </li>
-        ))}
+        {seeds.map((seed) => <JournalEntry key={seed.id} seed={seed} onSave={onSave} />)}
       </ul>
     </section>
   );
@@ -239,10 +300,15 @@ function MemberGarden() {
 
   const unplanted = seeds.filter((seed) => !seed.plantedAt && !seed.harvestedAt);
   const planted = seeds.filter((seed) => seed.plantedAt && !seed.harvestedAt);
-  const harvested = seeds.filter((seed) => seed.harvestedAt).sort((a, b) => new Date(b.harvestedAt) - new Date(a.harvestedAt));
   const selectedSeed = unplanted.find((seed) => seed.id === selectedSeedId);
   const inspected = planted.find((seed) => seed.id === inspectedId);
   const seedsByPlot = new Map(planted.map((seed) => [Number(seed.plot), seed]));
+
+  async function saveObservation(seedId, reflection) {
+    const { seed } = await api(`/garden/${encodeURIComponent(seedId)}/reflection`, { method: 'PATCH', body: { reflection } });
+    setSeeds((previous) => previous.map((current) => current.id === seed.id ? { ...current, reflection: seed.reflection } : current));
+    return seed.reflection;
+  }
 
   async function updateSeed(seedId, action, body, message) {
     setBusy(true);
@@ -250,7 +316,7 @@ function MemberGarden() {
     setStatus('');
     try {
       const { seed } = await api(`/garden/${encodeURIComponent(seedId)}/${action}`, { method: 'POST', body });
-      setSeeds((previous) => previous.map((current) => current.id === seed.id ? seed : current));
+      setSeeds((previous) => previous.map((current) => current.id === seed.id ? { ...seed, reflection: current.reflection } : current));
       setStatus(message);
       return seed;
     } catch (error) {
@@ -300,6 +366,9 @@ function MemberGarden() {
 
   return (
     <>
+      {seeds.length > 0 && <a className="garden-text-link garden-journal-link" href="#service-journal">
+        Open service journal <ArrowRight size={15} aria-hidden="true" />
+      </a>}
       <div className="garden-layout">
         <aside className="garden-sidebar" aria-label="Garden tools">
           {inspected && <PlantDetails
@@ -346,7 +415,7 @@ function MemberGarden() {
           </div>
         </section>
       </div>
-      <HarvestJournal seeds={harvested} />
+      <ServiceJournal seeds={seeds} onSave={saveObservation} />
     </>
   );
 }
@@ -357,7 +426,7 @@ export default function Garden({ user }) {
       <header className="garden-header">
         <div>
           <h1>Your garden</h1>
-          <p>Each time you record help, you get a seed to plant here.</p>
+          <p>Each act you record gives you a seed. Come back to reflect on what you notice.</p>
         </div>
         <span className="garden-privacy"><LockKeyhole size={15} aria-hidden="true" /> Private</span>
       </header>

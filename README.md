@@ -1,10 +1,12 @@
 # Public Horses
 
-**Kshetra** helps people find projects that serve their communities. See what a project needs, offer help directly, and grow a private garden from the acts you record. A member can organize projects and support other organizers with one account.
+Public Horses is a service board. Post a specific way to help or find an opportunity you can fulfill. Record your service and reflect on it in a private garden. A member can post and fulfill opportunities with one account.
 
 ## Mission and team
 
 Read the [mission and participant journey](docs/mission.md) for the project’s purpose. Use the [agent guide](AGENTS.md) and [team roster](docs/agent-team.md) to assign work, review it, and run a private rehearsal.
+
+Use the [pilot acceptance plan](docs/pilot-acceptance.md) to test the service path. Use the [pilot hosting guide](docs/pilot-hosting.md) to test sign-in, durable storage, and recovery.
 
 ## Brand and UI
 
@@ -66,10 +68,11 @@ For hosting, set the exact HTTPS origin. Rehearse with development keys and use 
 
 ## How the marketplace works
 
-1. **Organize.** Create a person or organization profile in the workspace. Use it to list a project, volunteer opportunity, or event. Add a schedule when it helps. Provide an end date, official support links, and a private source for review.
+1. **Post.** Create a person or organization profile in the workspace. State the task, where and when to help, and what counts as complete. Provide an end date, official support links, and a private source for review.
 2. **Review.** A separate reviewer checks the listing, profile, and any image. Approval makes that version public. Later profile edits stay private until a reviewer approves a listing that uses them. Expired and closed listings leave the directory.
-3. **Support.** Filter by field and open a specific ask. Give through the organizer’s own channel. Sign in to record help you already gave and choose an intention.
-4. **Grow.** Each saved act earns one private seed. Plant it, water it once a day, and harvest after three waterings. Your account keeps the garden and its optional notes.
+3. **Serve.** Find a specific need and respond through the organizer’s own channel. The organizer can mark the opportunity fulfilled once the help meets the need.
+4. **Record.** Sign in to record service you already gave and choose an intention. Use the direct link to record past service after the opportunity closes.
+5. **Reflect.** Each saved act gives you one private seed. You can plant it, water it once a day, and harvest after three waterings. Use the journal to record what you notice later.
 
 [Kiva’s discovery and support flow](https://www.kiva.org/about/how) and [partner review](https://www.kiva.org/about/due-diligence/lending-partners) informed this structure. Public Horses records self-reported support and sends givers to the organizer.
 

@@ -435,7 +435,7 @@
   text-decoration: underline;
 }
 
-.garden-page :is(button, a):focus-visible {
+.garden-page :is(button, a, summary):focus-visible {
   outline: 2px solid #795037;
   outline-offset: 3px;
 }
@@ -469,7 +469,10 @@
 
 .garden-journal {
   margin-top: 2.15rem;
+  scroll-margin-top: 12px;
 }
+
+.garden-journal-link { margin-bottom: .75rem; }
 
 .garden-journal__entries {
   display: grid;
@@ -479,17 +482,24 @@
 }
 
 .garden-journal__entries h3 {
-  margin: .49rem 0 0;
+  margin: 0;
   font: 500 1.28rem / 1.2 var(--garden-serif);
   overflow-wrap: anywhere;
 }
 
 .garden-journal__entries time {
-  display: block;
-  margin-top: .6rem;
   color: var(--garden-muted);
   font-size: .75rem;
 }
+
+.garden-journal__act { display: grid; gap: .65rem; margin-block: .8rem; }
+.garden-journal__act dt { font-size: .78rem; font-weight: 700; }
+.garden-journal__act dd { margin: .18rem 0 0; overflow-wrap: anywhere; }
+.garden-journal__act .garden-reflection { margin-top: .15rem; }
+.garden-journal__harvest { color: var(--garden-muted); font-size: .75rem; }
+.garden-observation { margin-top: .5rem; border-top: 1px solid var(--garden-border); }
+.garden-observation summary { padding-block: .65rem; color: var(--garden-green); font-size: .88rem; font-weight: 650; cursor: pointer; }
+.garden-journal__entries .garden-feedback:not(:empty) { margin-top: .5rem; }
 
 .garden-plant {
   --leaf: #54824f;

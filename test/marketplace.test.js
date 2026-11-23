@@ -3,6 +3,7 @@ import { once } from 'node:events';
 import { mkdtempSync, rmSync, rmdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 import { randomUUID } from 'node:crypto';
 import sharp from 'sharp';
@@ -80,6 +81,7 @@ test('an organizer submits, gets feedback, and a different reviewer publishes th
   store.setReviewer(reviewerEmail);
   const { data: { project: draft } } = await owner('/projects', { method: 'POST', body: request, expect: 0 });
   assert.equal(draft.status, 'draft');
+  assert.equal(draft.completion, '');
   assert.deepEqual((await guest('/projects')).data.projects, []);
   await guest('/projects/' + draft.slug, { expect: 404 });
   const mine = '/mine/projects/' + draft.id;
@@ -103,9 +105,103 @@ test('an organizer submits, gets feedback, and a different reviewer publishes th
   assert.equal(publicCard.open, true);
   assert.equal('proofUrl' in publicCard, false);
   assert.equal('reviewNote' in publicCard, false);
-  await owner(mine + '/close', { method: 'POST', body: { version: published.version } });
+  const { data: { project: closed } } = await owner(mine + '/close', { method: 'POST', body: { version: published.version } });
+  assert.equal(closed.status, 'closed');
+  assert.equal(closed.fulfilledAt, null);
   assert.deepEqual((await guest('/projects')).data.projects, []);
   assert.equal((await guest('/projects/' + draft.slug)).data.project.open, false);
+});
+
+test('only the organizer can confirm fulfillment and a supporter can record help afterward', async (t) => {
+  const { client, store } = await running(t);
+  const guest = client();
+  const owner = client();
+  const reviewer = client();
+  const supporter = client();
+  await signup(owner, 'Organizer');
+  store.setReviewer(await signup(reviewer, 'Reviewer'));
+  await signup(supporter, 'Supporter');
+
+  await owner('/projects', { method: 'POST', body: { ...request, completion: 'x'.repeat(281) }, expect: 400 });
+  const completion = 'The crew sorts all boxes and clears the table.';
+  const { data: { project: draft } } = await owner('/projects', {
+    method: 'POST', body: { ...request, completion }, expect: 201,
+  });
+  const mine = '/mine/projects/' + draft.id;
+  const publicPath = '/projects/' + draft.slug;
+  const service = {
+    projectId: draft.id, type: 'time', intention: 'nourishment', note: 'I sorted the donations.', requestId: randomUUID(),
+  };
+  await supporter('/support', { method: 'POST', body: service, expect: 404 });
+  await owner(mine + '/close', { method: 'POST', body: { version: draft.version, fulfilled: true }, expect: 409 });
+
+  const { data: { project: edited } } = await owner(mine, {
+    method: 'PATCH', body: { ...request, version: draft.version, summary: 'Sort the Saturday donations.' },
+  });
+  assert.equal(edited.completion, completion);
+  const { data: { project: submitted } } = await owner(mine + '/submit', {
+    method: 'POST', body: { version: edited.version },
+  });
+  const { data: { projects: queue } } = await reviewer('/review');
+  assert.equal(queue[0].completion, completion);
+  const { data: { project: published } } = await reviewer('/review/' + draft.id, {
+    method: 'POST', body: { version: submitted.version, decision: 'publish' },
+  });
+  const { data: { project: publicProject } } = await guest(publicPath);
+  assert.equal(publicProject.completion, completion);
+  assert.equal(publicProject.fulfilledAt, null);
+  assert.deepEqual(publicProject.needs, request.needs);
+
+  const closure = { version: published.version, fulfilled: true };
+  await reviewer(mine + '/close', { method: 'POST', body: closure, expect: 404 });
+  await owner(mine + '/close', { method: 'POST', body: { ...closure, version: submitted.version }, expect: 409 });
+  await owner(mine + '/close', { method: 'POST', body: { ...closure, fulfilled: 'true' }, expect: 400 });
+  const { data: { project: fulfilled } } = await owner(mine + '/close', { method: 'POST', body: closure });
+  assert.equal(fulfilled.status, 'closed');
+  assert.equal(fulfilled.fulfilledAt, '2027-01-07T12:00:00.000Z');
+  assert.deepEqual((await guest('/projects')).data.projects, []);
+  const { data: { project: closed } } = await guest(publicPath);
+  assert.equal(closed.open, false);
+  assert.equal(closed.fulfilledAt, fulfilled.fulfilledAt);
+  assert.ok(closed.needs.every(({ url }) => url === null));
+
+  const { data: { seed } } = await supporter('/support', { method: 'POST', body: service, expect: 201 });
+  assert.equal(seed.note, service.note);
+  assert.equal(seed.reflection, '');
+  const replay = await supporter('/support', { method: 'POST', body: service, expect: 201 });
+  assert.equal(replay.data.seed.id, seed.id);
+  assert.deepEqual((await supporter('/garden')).data.seeds.map(({ id }) => id), [seed.id]);
+});
+
+test('expired requests allow past service without confirming fulfillment or exposing help links', async (t) => {
+  const { client, store, nextDay } = await running(t);
+  seedDemo(store);
+  const guest = client();
+  const owner = client();
+  const reviewer = client();
+  await signup(owner, 'Organizer');
+  store.setReviewer(await signup(reviewer, 'Reviewer'));
+
+  const { data: { project: draft } } = await owner('/projects', {
+    method: 'POST', body: { ...request, endsAt: '2027-01-07' }, expect: 201,
+  });
+  const mine = '/mine/projects/' + draft.id;
+  const { data: { project: submitted } } = await owner(mine + '/submit', {
+    method: 'POST', body: { version: draft.version },
+  });
+  await reviewer('/review/' + draft.id, { method: 'POST', body: { version: submitted.version, decision: 'publish' } });
+  nextDay();
+  assert.deepEqual((await guest('/projects')).data.projects, []);
+  const { data: { project: expired } } = await guest('/projects/' + draft.slug);
+  assert.equal(expired.open, false);
+  assert.equal(expired.fulfilledAt, null);
+  assert.ok(expired.needs.every(({ url }) => url === null));
+
+  const service = { projectId: draft.id, type: 'time', intention: 'nourishment', requestId: randomUUID() };
+  await reviewer('/support', { method: 'POST', body: service, expect: 201 });
+  await reviewer('/support', {
+    method: 'POST', body: { ...service, projectId: 'demo-pantry', type: 'supplies', requestId: randomUUID() }, expect: 404,
+  });
 });
 
 test('listing images remain private through review and publish as sanitized WebP', async (t) => {
@@ -224,7 +320,27 @@ test('support retries add one private seed, and plants grow across separate days
   const harvested = (await supporter(plant + '/harvest', { method: 'POST', body: {} })).data.seed;
   assert.ok(harvested.harvestedAt);
   assert.equal(harvested.note, body.note);
-  assert.equal(JSON.stringify((await guest('/projects')).data).includes(body.note), false);
+
+  const reflectionPath = plant + '/reflection';
+  const observation = 'Several neighbors returned to help again.';
+  await guest(reflectionPath, { method: 'PATCH', body: { reflection: observation }, expect: 401 });
+  await stranger(reflectionPath, { method: 'PATCH', body: { reflection: observation }, expect: 404 });
+  await supporter(reflectionPath, { method: 'PATCH', body: {}, expect: 400 });
+  await supporter(reflectionPath, { method: 'PATCH', body: { reflection: 'x'.repeat(501) }, expect: 400 });
+  const { data: { seed: reflected } } = await supporter(reflectionPath, { method: 'PATCH', body: { reflection: observation } });
+  assert.equal(reflected.reflection, observation);
+  assert.equal(reflected.note, body.note);
+  assert.equal(reflected.intention, body.intention);
+  const updated = 'We planned another shift together.';
+  await supporter(reflectionPath, { method: 'PATCH', body: { reflection: updated } });
+  assert.equal((await supporter('/garden')).data.seeds[0].reflection, updated);
+  assert.deepEqual((await stranger('/garden')).data.seeds, []);
+  const publicData = JSON.stringify((await guest('/projects/' + project.slug)).data);
+  assert.equal(publicData.includes(body.note), false);
+  assert.equal(publicData.includes(updated), false);
+  const { data: { seed: cleared } } = await supporter(reflectionPath, { method: 'PATCH', body: { reflection: '' } });
+  assert.equal(cleared.reflection, '');
+  assert.equal(cleared.note, body.note);
 });
 
 test('only same-origin requests can act from a browser session', async (t) => {
@@ -253,6 +369,57 @@ test('a file-backed store retains fixtures across restarts', () => {
       assert.equal(second.listPublic(false).length, 0);
     } finally {
       second.close();
+    }
+  } finally {
+    for (const name of ['marketplace.sqlite', 'marketplace.sqlite-wal', 'marketplace.sqlite-shm']) {
+      rmSync(join(folder, name), { force: true });
+    }
+    rmdirSync(folder);
+  }
+});
+
+test('opening a previous database keeps closed listings and original private service notes', () => {
+  const folder = mkdtempSync(join(tmpdir(), 'public-horses-migrate-'));
+  const database = join(folder, 'marketplace.sqlite');
+  const clock = () => Date.parse('2027-01-07T12:00:00Z');
+  try {
+    const setup = createStore(database, { clock });
+    let owner, reviewer, draft, seed;
+    try {
+      owner = setup.createAccount('Organizer', 'organizer@example.org', 'disabled').id;
+      reviewer = setup.createAccount('Reviewer', 'reviewer@example.org', 'disabled').id;
+      draft = setup.createProject(owner, request);
+      const submitted = setup.submitProject(owner, draft.id, draft.version);
+      const published = setup.reviewProject(reviewer, draft.id, { version: submitted.version, decision: 'publish' });
+      seed = setup.recordSupport(reviewer, {
+        projectId: draft.id, type: 'time', intention: 'nourishment', note: 'Original private note', requestId: randomUUID(),
+      });
+      setup.closeProject(owner, draft.id, published.version);
+    } finally {
+      setup.close();
+    }
+
+    const previous = new DatabaseSync(database);
+    try {
+      previous.exec(`ALTER TABLE projects DROP COLUMN completion;
+        ALTER TABLE projects DROP COLUMN fulfilled_at;
+        ALTER TABLE seeds DROP COLUMN reflection;`);
+    } finally {
+      previous.close();
+    }
+
+    for (let iteration = 0; iteration < 2; iteration += 1) {
+      const migrated = createStore(database, { clock });
+      try {
+        const [closed] = migrated.listOwned(owner);
+        assert.equal(closed.id, draft.id);
+        assert.equal(closed.status, 'closed');
+        assert.equal(closed.completion, '');
+        assert.equal(closed.fulfilledAt, null);
+        assert.deepEqual(migrated.listSeeds(reviewer), [seed]);
+      } finally {
+        migrated.close();
+      }
     }
   } finally {
     for (const name of ['marketplace.sqlite', 'marketplace.sqlite-wal', 'marketplace.sqlite-shm']) {

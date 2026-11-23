@@ -69,7 +69,7 @@ function Header({ path, user, signedIn = Boolean(user), onSignOut = signOutLocal
           <div className="nav-account">
             {signedIn ? <Button variant="plain" disabled={signingOut} onClick={signOut}>Sign out</Button>
               : <Button href="/sign-in" variant="plain">Sign in</Button>}
-            {!user && <Button href="/workspace">Start a project</Button>}
+            {!user && <Button href="/workspace">Post an opportunity</Button>}
           </div>
         </nav>
       </div>
@@ -87,7 +87,7 @@ function Footer({ path }) {
           <a href="/#projects">Explore projects</a>
           <a href="/about" aria-current={path === '/about' ? 'page' : undefined}>About</a>
           <a href="/garden">My garden</a>
-          <a href="/workspace">Start a project</a>
+          <a href="/workspace">Post an opportunity</a>
         </nav>
       </div>
     </footer>

@@ -4,11 +4,11 @@ Use this brief to make project decisions within Bob’s authority. It is an oper
 
 ## Mission and vision
 
-**Mission.** Keep the team focused on getting useful help to people who ask for it. Give each role a clear result to deliver.
+**Mission.** Keep the team focused on helping people post and fulfill acts of service. Give each role a clear result to deliver.
 
-**Vision.** Organizers can keep their requests current. Supporters can find a need, act, and return. The garden gives them a private way to reflect.
+**Vision.** People make service a lifelong practice. The board helps them act. The garden helps them reflect on the world they want to create.
 
-**Place in the journey.** Protect the full path from a current request to direct help and private reflection. [Participant journey](mission.md#participant-journey)
+**Place in the journey.** Protect the full path from a current request to fulfillment and private reflection. [Participant journey](mission.md#participant-journey)
 
 ## Decisions
 
@@ -25,7 +25,7 @@ Use this brief to make project decisions within Bob’s authority. It is an oper
 - A decision on each hold that affects scope or timing. Continue independent work when possible.
 - A closeout with what people used, what organizers received according to their feedback, and one improvement to test next.
 
-For the proposed first pilot, check the path from an active Nourishment listing to the organizer’s support channel. Check the private garden with a test member. After two partner cycles, check whether requests stay current and supporters return. Mark unavailable results as unknown.
+For the proposed first pilot, check one Nourishment request from posting through organizer confirmation. Ask a test member to record the act after closure. Check that they can return and reflect privately. After two partner cycles, check whether requests stay current and supporters return. Mark unavailable results as unknown. [Pilot acceptance plan](pilot-acceptance.md)
 
 ## Start a session
 
