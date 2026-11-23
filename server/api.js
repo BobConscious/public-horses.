@@ -168,8 +168,10 @@ export function createApi(store, { demo = false, secureCookies = false, clerk } 
   });
   api.post('/mine/projects/:id/submit', signedIn, (req, res) =>
     res.json({ project: store.submitProject(req.member.id, req.params.id, body(req).version) }));
-  api.post('/mine/projects/:id/close', signedIn, (req, res) =>
-    res.json({ project: store.closeProject(req.member.id, req.params.id, body(req).version) }));
+  api.post('/mine/projects/:id/close', signedIn, (req, res) => {
+    const { version, fulfilled } = body(req);
+    res.json({ project: store.closeProject(req.member.id, req.params.id, version, fulfilled) });
+  });
 
   api.get('/review', signedIn, reviewer, (req, res) => res.json({ projects: store.reviewQueue(req.member.id) }));
   api.post('/review/:id', signedIn, reviewer, (req, res) =>
@@ -178,6 +180,8 @@ export function createApi(store, { demo = false, secureCookies = false, clerk } 
   api.post('/support', signedIn, (req, res) =>
     res.status(201).json({ seed: store.recordSupport(req.member.id, body(req), demo) }));
   api.get('/garden', signedIn, (req, res) => res.json({ seeds: store.listSeeds(req.member.id) }));
+  api.patch('/garden/:id/reflection', signedIn, (req, res) =>
+    res.json({ seed: store.updateSeedReflection(req.member.id, req.params.id, body(req).reflection) }));
   api.post('/garden/:id/plant', signedIn, (req, res) =>
     res.json({ seed: store.plantSeed(req.member.id, req.params.id, body(req).plot) }));
   api.post('/garden/:id/water', signedIn, (req, res) => {

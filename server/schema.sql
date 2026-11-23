@@ -29,11 +29,13 @@ CREATE TABLE IF NOT EXISTS projects (
   location TEXT NOT NULL,
   summary TEXT NOT NULL,
   story TEXT NOT NULL,
+  completion TEXT NOT NULL DEFAULT '',
   field TEXT NOT NULL CHECK (field IN ('nourishment', 'health', 'relationships',
     'livelihood', 'happiness', 'partnership')),
   ends_at TEXT NOT NULL,
   proof_url TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('draft', 'submitted', 'changes_requested', 'published', 'closed')),
+  fulfilled_at TEXT,
   version INTEGER NOT NULL CHECK (version >= 1),
   art TEXT NOT NULL DEFAULT '',
   demo INTEGER NOT NULL DEFAULT 0 CHECK (demo IN (0, 1)),
@@ -80,6 +82,11 @@ CREATE TABLE IF NOT EXISTS project_profiles (
 ) STRICT;
 CREATE INDEX IF NOT EXISTS projects_by_profile ON project_profiles(profile_id, profile_version);
 
+CREATE TABLE IF NOT EXISTS project_places (
+  project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+  place_id TEXT NOT NULL CHECK (length(place_id) BETWEEN 1 AND 128)
+) STRICT;
+
 CREATE TABLE IF NOT EXISTS project_images (
   project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
   alt TEXT NOT NULL CHECK (length(alt) BETWEEN 1 AND 200),
@@ -114,6 +121,7 @@ CREATE TABLE IF NOT EXISTS seeds (
   intention TEXT NOT NULL CHECK (intention IN ('nourishment', 'health', 'relationships',
     'livelihood', 'happiness', 'partnership')),
   note TEXT NOT NULL,
+  reflection TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL,
   planted_at TEXT,
   watered_at TEXT,

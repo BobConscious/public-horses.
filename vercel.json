@@ -4,7 +4,7 @@
   "outputDirectory": "dist",
   "functions": {
     "api/*.js": {
-      "includeFiles": "server/{schema.sql,fixtures/city-sunset.webp}"
+      "includeFiles": "{server/schema.sql,server/fixtures/city-sunset.webp,public/maps/places.json}"
     }
   },
   "rewrites": [

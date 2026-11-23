@@ -82,8 +82,8 @@ export function officialUrl(value) {
 export function EmptyProjects({ filtered, onReset }) {
   return (
     <div className="empty-state">
-      <h2>{filtered ? 'No matching projects' : 'No open projects yet'}</h2>
-      <p>{filtered ? 'Change a filter or search term.' : 'Projects appear here after review.'}</p>
+      <h2>{filtered ? 'No matching opportunities' : 'No open opportunities yet'}</h2>
+      <p>{filtered ? 'Change a filter or search term.' : 'Opportunities appear here after review.'}</p>
       {filtered && <Button variant="outline" onClick={onReset}>Clear filters</Button>}
     </div>
   );

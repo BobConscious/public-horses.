@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { findPlace } from './places.js';
 import { emailAddress, expectVersion, profileInput, projectInput, requireThat, supportInput, text } from './validation.js';
 
 const schema = readFileSync(new URL('./schema.sql', import.meta.url), 'utf8');
@@ -25,6 +26,7 @@ function checkClerkIdentity(issuer, subject) {
 function seedView(row) {
   return {
     id: row.id, projectTitle: row.project_title, intention: row.intention, note: row.note, type: row.type,
+    reflection: row.reflection,
     createdAt: row.created_at, plantedAt: row.planted_at, wateredAt: row.watered_at,
     waters: row.waters, plot: row.plot, harvestedAt: row.harvested_at,
   };
@@ -54,9 +56,12 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
   const now = () => new Date(clock()).toISOString();
   const today = () => now().slice(0, 10);
   const byId = (id) => get('SELECT * FROM projects WHERE id = ?', id);
-  const projectLink = (id) => get('SELECT * FROM project_profiles WHERE project_id = ?', id);
+  const projectLink = (id) => get(`SELECT p.*, l.place_id FROM project_profiles p
+    LEFT JOIN project_places l ON l.project_id = p.project_id WHERE p.project_id = ?`, id);
   const seedById = (id) => get('SELECT * FROM seeds WHERE id = ?', id);
   const isOpen = (row, on) => row.status === 'published' && row.ends_at >= on;
+  const isPublic = (row, includeDemo) => row && (row.status === 'published' || row.status === 'closed')
+    && (includeDemo || row.demo === 0);
   const clerkMemberRow = (issuer, subject) => get(`SELECT m.* FROM members m
     JOIN member_identities i ON m.id = i.member_id WHERE i.issuer = ? AND i.subject = ?`, issuer, subject);
 
@@ -155,7 +160,9 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
     const view = {
       id: row.id, slug: row.slug, title: row.title, organization: profile.name, profile, location: row.location,
       summary: row.summary, story: row.story, field: row.field, endsAt: row.ends_at, listingType: link.listing_type,
+      completion: row.completion, fulfilledAt: row.fulfilled_at,
       schedule: link.schedule,
+      mapLocation: findPlace(link.place_id),
       image: image ? { alt: image.alt, url: internal
         ? `/api/project-images/${encodeURIComponent(row.id)}/preview`
         : `/api/projects/${encodeURIComponent(row.slug)}/image` } : null,
@@ -174,9 +181,8 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
   }
 
   function publicProject(slug, includeDemo) {
-    const row = get(`SELECT * FROM projects WHERE slug = ? AND status IN ('published', 'closed')
-      AND (demo = 0 OR ? = 1)`, slug, Number(includeDemo));
-    requireThat(row, 404, 'Project not found.');
+    const row = get('SELECT * FROM projects WHERE slug = ?', slug);
+    requireThat(isPublic(row, includeDemo), 404, 'Project not found.');
     return row;
   }
 
@@ -196,6 +202,16 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
     id, image.alt, image.bytes);
   }
 
+  function setProjectPlace(id, placeId) {
+    if (placeId === undefined) return;
+    if (placeId === null) {
+      run('DELETE FROM project_places WHERE project_id = ?', id);
+      return;
+    }
+    run(`INSERT INTO project_places(project_id, place_id) VALUES(?, ?)
+      ON CONFLICT(project_id) DO UPDATE SET place_id = excluded.place_id`, id, placeId);
+  }
+
   function replaceNeeds(id, needs) {
     run('DELETE FROM needs WHERE project_id = ?', id);
     for (const { type, detail, url } of needs) {
@@ -206,12 +222,13 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
   function insertProject(data, owner, profile, { id = randomUUID(), slug = resourceSlug(data.title, id, 'project'),
     status = 'draft', version = 1, art = fieldArt[data.field] ?? '', demo = 0, image } = {}) {
     const stamp = now();
-    run(`INSERT INTO projects(id, slug, owner_id, title, organization, location, summary, story, field, ends_at,
+    run(`INSERT INTO projects(id, slug, owner_id, title, organization, location, summary, story, completion, field, ends_at,
           proof_url, status, version, art, demo, created_at, updated_at)
-        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, slug, owner, data.title,
-    profile.name, data.location, data.summary, data.story, data.field, data.endsAt, data.proofUrl,
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, slug, owner, data.title,
+    profile.name, data.location, data.summary, data.story, data.completion ?? '', data.field, data.endsAt, data.proofUrl,
     status, version, art, demo, stamp, stamp);
     setProjectProfile(id, owner, profile, data.listingType, data.schedule);
+    setProjectPlace(id, data.placeId);
     replaceNeeds(id, data.needs);
     setProjectImage(id, image);
     return projectView(byId(id), stamp.slice(0, 10), true);
@@ -234,6 +251,12 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
   try {
     transaction(() => {
       db.exec(schema);
+      const projectColumns = all('PRAGMA table_info(projects)').map(({ name }) => name);
+      if (!projectColumns.includes('completion')) db.exec("ALTER TABLE projects ADD COLUMN completion TEXT NOT NULL DEFAULT ''");
+      if (!projectColumns.includes('fulfilled_at')) db.exec('ALTER TABLE projects ADD COLUMN fulfilled_at TEXT');
+      if (!all('PRAGMA table_info(seeds)').some(({ name }) => name === 'reflection')) {
+        db.exec("ALTER TABLE seeds ADD COLUMN reflection TEXT NOT NULL DEFAULT ''");
+      }
       const legacy = all(`SELECT p.id, p.owner_id, p.organization, p.demo FROM projects p
         LEFT JOIN project_profiles l ON l.project_id = p.id WHERE l.project_id IS NULL
         ORDER BY p.created_at, p.id`);
@@ -386,10 +409,11 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
         const data = projectInput({ listingType: link.listing_type, schedule: link.schedule, ...input }, on);
         const profile = selectProjectProfile(owner, data, row);
         run(`UPDATE projects SET title = ?, organization = ?, location = ?, summary = ?, story = ?,
-              field = ?, ends_at = ?, proof_url = ?, art = ?, updated_at = ?, version = version + 1 WHERE id = ?`,
-        data.title, profile.name, data.location, data.summary, data.story, data.field, data.endsAt,
+              completion = ?, field = ?, ends_at = ?, proof_url = ?, art = ?, updated_at = ?, version = version + 1 WHERE id = ?`,
+        data.title, profile.name, data.location, data.summary, data.story, data.completion ?? row.completion, data.field, data.endsAt,
         data.proofUrl, fieldArt[data.field] ?? '', stamp, id);
         setProjectProfile(id, owner, profile, data.listingType, data.schedule);
+        setProjectPlace(id, data.placeId === undefined && data.location !== row.location ? null : data.placeId);
         replaceNeeds(id, data.needs);
         setProjectImage(id, image);
         return projectView(byId(id), on, true);
@@ -412,13 +436,15 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
         return projectView(byId(id), on, true);
       });
     },
-    closeProject(owner, id, version) {
+    closeProject(owner, id, version, fulfilled = false) {
       return transaction(() => {
         const row = ownedProject(id, owner);
         expectVersion(version, row);
+        requireThat(typeof fulfilled === 'boolean', 400, 'Use true or false for fulfillment.');
         requireThat(row.status === 'published', 409, 'Only a published project can be closed.');
         const stamp = now();
-        run("UPDATE projects SET status = 'closed', version = version + 1, updated_at = ? WHERE id = ?", stamp, id);
+        run(`UPDATE projects SET status = 'closed', fulfilled_at = ?, version = version + 1, updated_at = ? WHERE id = ?`,
+          fulfilled ? stamp : null, stamp, id);
         return projectView(byId(id), stamp.slice(0, 10), true);
       });
     },
@@ -458,20 +484,25 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
           return seedView(prior);
         }
         const row = byId(data.projectId);
-        const stamp = now();
-        requireThat(row && (includeDemo || row.demo === 0) && isOpen(row, stamp.slice(0, 10)), 404,
-          'This project is closed or unavailable.');
+        requireThat(isPublic(row, includeDemo), 404, 'This project is unavailable.');
         requireThat(get('SELECT 1 FROM needs WHERE project_id = ? AND type = ?', data.projectId, data.type),
           400, 'Choose a support type listed for this project.');
         const id = randomUUID();
         run(`INSERT INTO seeds(id, member_id, request_id, project_id, project_title, type, intention, note, created_at)
           VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, member, data.requestId, data.projectId, row.title,
-        data.type, data.intention, data.note, stamp);
+        data.type, data.intention, data.note, now());
         return seedView(seedById(id));
       });
     },
     listSeeds(member) {
       return all('SELECT * FROM seeds WHERE member_id = ? ORDER BY created_at DESC, id', member).map(seedView);
+    },
+    updateSeedReflection(member, id, value) {
+      requireThat(value !== undefined, 400, 'Enter a later reflection or use empty text to clear it.');
+      const reflection = text(value, 'Later reflection', 500, { optional: true });
+      return changeSeed(member, id, () => {
+        run('UPDATE seeds SET reflection = ? WHERE id = ?', reflection, id);
+      });
     },
     plantSeed(member, id, plot) {
       requireThat(Number.isInteger(plot) && plot >= 1 && plot <= 12, 400, 'Choose a garden plot.');
@@ -514,6 +545,7 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
           const profile = demoProfile(inputProfile, data.organization);
           if (existing) {
             setProjectProfile(id, demoOrganizer, profile, data.listingType, data.schedule);
+            setProjectPlace(id, data.placeId ?? null);
             setProjectImage(id, demoImage);
             continue;
           }

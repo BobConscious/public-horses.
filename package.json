@@ -12,6 +12,7 @@
     "build": "vite build",
     "start": "node server/index.js --production",
     "reviewer": "node server/reviewer.js",
+    "team:check": "node scripts/check-team.js",
     "test": "node --test"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "@clerk/react": "6.19.4",
     "@clerk/shared": "4.48.3",
     "express": "5.3.0",
+    "leaflet": "1.9.4",
     "lucide-react": "1.77.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",

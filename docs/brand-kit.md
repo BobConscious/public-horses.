@@ -1,12 +1,12 @@
 # Public Horses brand kit
 
-Public Horses helps people find practical ways to help their communities. Individuals and organizations list what they need. Supporters give directly to the organizer.
+Public Horses is a service board. Individuals and organizations post specific ways to help. Supporters fulfill opportunities through the organizer.
 
-- **Name.** Use **Public Horses** in public copy. The name comes from a teaching by Geshe Michael about working for others.
-- **Short description.** Find community projects that need your time, skills, supplies, or money.
-- **Supporter path.** Find a project. Help through the organizer. Record the help you gave.
-- **Organizer path.** Create a profile. Make a specific request. Submit the listing for review.
-- **Private garden.** Each recorded act gives the supporter a seed. They can plant and tend it in their garden.
+- **Name.** Use **Public Horses** in public copy. The shared village horse gives us an example of lifelong service.
+- **Short description.** Find a way to serve or post a service opportunity.
+- **Supporter path.** Find an opportunity. Help through the organizer. Record what you did and reflect on it.
+- **Organizer path.** Make a specific request. Submit it for review. Mark it fulfilled when the help meets the need.
+- **Private garden.** Each recorded act gives the supporter a seed. The journal lets them reflect on what they want to cultivate and what they notice later.
 
 ## Voice
 
@@ -16,15 +16,17 @@ Use plain verbs and specific needs. Lead with the work, who is doing it, and how
 | --- | --- |
 | Listing title | Help digitize media archives |
 | Specific request | Help prepare and label scanned files. |
-| Primary actions | Browse projects, Start a project, Visit organizer |
-| Help record | Record help you already gave. |
-| Review | Draft, Under review, Needs changes, Published, Closed |
+| Primary actions | Find a way to serve, Post a service opportunity, Visit organizer |
+| Service record | Record service you already gave. |
+| Review | Draft, Under review, Needs changes, Published, Closed, Fulfilled |
 
 Use the organizer’s name when available. Use “recorded help” for self-reported acts. Use exact figures when the source supports them.
 
 ## Visual direction
 
 Use the paper tones, restrained color, and close observation of historic botanical studies. Give artwork room on the home page, About page, and garden.
+
+Use 8 px corners on controls and 14 px corners on cards and panels. Keep the horse mark square and full-width artwork straight at the edges.
 
 Keep search, listings, and forms direct. Kiva provides a reference for searchable results, useful filters, concrete asks, and clear next steps. Public Horses uses these patterns for direct community support. [Kiva’s directory](https://www.kiva.org/lend/filter) · [How Kiva works](https://www.kiva.org/about/how)
 

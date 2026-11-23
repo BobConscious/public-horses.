@@ -1,4 +1,5 @@
 import { fields as fieldCatalog, listingTypes as listingCatalog, profileKinds as profileCatalog, supportKinds } from '../shared/catalog.js';
+import { findPlace } from './places.js';
 
 export class HttpError extends Error {
   constructor(status, message) {
@@ -44,6 +45,13 @@ const needTypes = new Set(supportKinds.map(({ id }) => id));
 const listingTypes = new Set(listingCatalog.map(({ id }) => id));
 const profileKinds = new Set(profileCatalog.map(({ id }) => id));
 
+function projectPlaceId(value) {
+  if (value == null) return value;
+  const id = text(value, 'Map city', 128, { optional: true });
+  requireThat(!id || findPlace(id), 400, 'Choose a city from the list.');
+  return id || null;
+}
+
 export function profileInput(input, kind = input.kind) {
   requireThat(profileKinds.has(kind), 400, 'Choose a person or organization profile.');
   requireThat(input.kind === undefined || input.kind === kind, 400, 'A profile type cannot change.');
@@ -74,8 +82,11 @@ export function projectInput(input, today, { demo = false } = {}) {
     profileId: input.profileId === undefined ? undefined : text(input.profileId, 'a profile', 128),
     organization: text(input.organization, 'Organization', 96, { optional: true }),
     location: text(input.location, 'Location', 96),
+    placeId: projectPlaceId(input.placeId),
     summary: text(input.summary, 'Summary', 200),
     story: text(input.story, 'Story', 4000),
+    completion: input.completion === undefined ? undefined
+      : text(input.completion, 'What counts as complete', 280, { optional: true }),
     field,
     listingType,
     schedule: text(input.schedule, 'Schedule', 200, { optional: true }),
