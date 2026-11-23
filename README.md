@@ -2,6 +2,10 @@
 
 **Kshetra** helps people find projects that serve their communities. See what a project needs, offer help directly, and grow a private garden from the acts you record. A member can organize projects and support other organizers with one account.
 
+## Mission and team
+
+Read the [mission and participant journey](docs/mission.md) for the project’s purpose. Use the [agent guide](AGENTS.md) and [team roster](docs/agent-team.md) to assign work, review it, and run a private rehearsal.
+
 ## Brand and UI
 
 Read the [brand kit](docs/brand-kit.md) and [UI library guide](docs/ui-library.md). Open `/design-system` to use the live examples and download the logo files and CSS tokens.
