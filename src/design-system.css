@@ -53,6 +53,7 @@
   place-items: center;
   padding: var(--space-4);
   border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
   background: var(--paper);
 }
 
@@ -71,13 +72,13 @@
 .library-logos figcaption a:hover { text-decoration: underline; }
 .library-section .library-guidance { padding-left: var(--space-3); border-left: 2px solid var(--forest); }
 
-.library-swatches > div { padding: var(--space-3); background: var(--paper); border: 1px solid var(--line); }
-.library-swatch { display: block; height: 46px; margin-bottom: var(--space-2); border: 1px solid var(--line); }
+.library-swatches > div { padding: var(--space-3); background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-panel); }
+.library-swatch { display: block; height: 46px; margin-bottom: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); }
 .library-swatch-label { display: flex; justify-content: space-between; gap: var(--space-1); font-weight: 650; }
 .library-swatches dd { margin: 0; color: var(--muted); font-size: var(--text-caption); }
 .library-swatches code { font-size: var(--text-caption); font-weight: 400; }
 .library-type, .library-halves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-6); }
-.library-type > div, .library-panel { padding: clamp(16px, 3vw, 28px); background: var(--paper); border: 1px solid var(--line); }
+.library-type > div, .library-panel { padding: clamp(16px, 3vw, 28px); background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-panel); }
 .library-type p + p, .library-panel > p { color: var(--muted); margin-top: var(--space-2); }
 .library-display { font: 400 clamp(28px, 4vw, 43px)/1.05 var(--font-display); letter-spacing: -.04em; }
 .library-body-example { font-size: 1.125rem; }

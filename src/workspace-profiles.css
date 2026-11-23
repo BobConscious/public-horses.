@@ -3,10 +3,10 @@
 .workspace-profiles-heading h2 { font-size: 30px; }
 .workspace-profiles > p, .workspace-profile p, .profile-editor > p { color: var(--muted); }
 .workspace-profile-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px; padding: 0; margin: 0; list-style: none; }
-.workspace-profile { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; border: 1px solid var(--line); background: var(--paper); }
+.workspace-profile { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--paper); }
 .workspace-profile h3, .profile-editor h3, .review-profile h3 { font-size: 23px; overflow-wrap: anywhere; }
 .workspace-profile p { font-size: 14px; overflow-wrap: anywhere; }
 .profile-editor > p { margin: 6px 0 18px; }
-.review-profile { margin-block: 14px; padding: 12px; border: 1px solid var(--line); background: var(--cream); overflow-wrap: anywhere; }
+.review-profile { margin-block: 14px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--cream); overflow-wrap: anywhere; }
 .review-profile h3 { margin-bottom: 6px; }
 .review-profile a { margin-top: 6px; }

@@ -73,7 +73,7 @@
   min-width: 0;
   padding: clamp(.85rem, 2.6vw, 1.55rem);
   border: 1px solid #c9cfb9;
-  border-radius: .25rem;
+  border-radius: var(--radius-panel);
   background: #e9ead8;
 }
 
@@ -226,7 +226,7 @@
 .garden-journal__entries > li {
   padding: 1rem 1.1rem;
   border: 1px solid var(--garden-border);
-  border-radius: .25rem;
+  border-radius: var(--radius-panel);
   background: var(--garden-paper);
 }
 

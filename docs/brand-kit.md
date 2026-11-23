@@ -26,6 +26,8 @@ Use the organizer’s name when available. Use “recorded help” for self-repo
 
 Use the paper tones, restrained color, and close observation of historic botanical studies. Give artwork room on the home page, About page, and garden.
 
+Use 8 px corners on controls and 14 px corners on cards and panels. Keep the horse mark square and full-width artwork straight at the edges.
+
 Keep search, listings, and forms direct. Kiva provides a reference for searchable results, useful filters, concrete asks, and clear next steps. Public Horses uses these patterns for direct community support. [Kiva’s directory](https://www.kiva.org/lend/filter) · [How Kiva works](https://www.kiva.org/about/how)
 
 Show the listing type, title, organizer, and specific request first. Include available facts such as place, schedule, and ways to help. Use a compact card with or without an image.

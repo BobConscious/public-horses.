@@ -29,8 +29,8 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-12: 48px;
-  --radius-control: 3px;
-  --radius-panel: 6px;
+  --radius-control: 8px;
+  --radius-panel: 14px;
   --control-min: 44px;
   --motion-control: 180ms;
 }
