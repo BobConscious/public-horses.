@@ -2,6 +2,7 @@ import { lazy, StrictMode, Suspense, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Menu, X } from 'lucide-react';
 import { api } from './http.js';
+import { AboutPage } from './about.jsx';
 import { AccountPage } from './auth.jsx';
 import { HomePage, ProjectPage, clearSupportAttempts } from './catalog.jsx';
 import { ProfilePage } from './profiles.jsx';
@@ -58,6 +59,7 @@ function Header({ path, user, signedIn = Boolean(user), onSignOut = signOutLocal
         <nav className="site-navigation" id="site-navigation" data-expanded={expanded} aria-label="Main navigation">
           <div className="nav-pages">
             <a href="/#projects" aria-current={current('/')}>Projects</a>
+            <a href="/about" aria-current={current('/about')}>About</a>
             <a href="/garden" aria-current={current('/garden')}>My garden</a>
             {user && <a href="/workspace" aria-current={current('/workspace')}>My projects</a>}
             {user?.reviewer && <a href="/review" aria-current={current('/review')}>Review</a>}
@@ -74,12 +76,17 @@ function Header({ path, user, signedIn = Boolean(user), onSignOut = signOutLocal
   );
 }
 
-function Footer() {
+function Footer({ path }) {
   return (
     <footer className="site-footer">
       <div className="container footer-inner">
         <Wordmark />
-        <nav aria-label="Footer navigation"><a href="/#projects">Explore projects</a><a href="/garden">My garden</a><a href="/workspace">Start a project</a></nav>
+        <nav aria-label="Footer navigation">
+          <a href="/#projects">Explore projects</a>
+          <a href="/about" aria-current={path === '/about' ? 'page' : undefined}>About</a>
+          <a href="/garden">My garden</a>
+          <a href="/workspace">Start a project</a>
+        </nav>
       </div>
     </footer>
   );
@@ -104,6 +111,7 @@ function App({ AuthPage = AccountPage, onSignOut, clerkSessionId }) {
   const loadingMember = !sessionReady && (path === '/garden' || isAuthPage && clerkSignedIn);
   let page;
   if (path === '/') page = <HomePage />;
+  else if (path === '/about') page = <AboutPage />;
   else if (projectPath) page = <ProjectPage slug={projectPath[1]} user={user} sessionReady={sessionReady} />;
   else if (profilePath) page = <ProfilePage slug={profilePath[1]} />;
   else if (path === '/garden') page = <Garden user={user} />;
@@ -123,7 +131,7 @@ function App({ AuthPage = AccountPage, onSignOut, clerkSessionId }) {
              : loadingMember ? <p className="loading container" role="status">Checking your session…</p> : page}
         </main>
       )}
-      <Footer />
+      <Footer path={path} />
     </>
   );
 }
