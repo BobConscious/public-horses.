@@ -8,6 +8,8 @@ Read the [mission and participant journey](docs/mission.md) for the project’s 
 
 Use the [pilot acceptance plan](docs/pilot-acceptance.md) to test the service path. Use the [pilot hosting guide](docs/pilot-hosting.md) to test sign-in, durable storage, and recovery.
 
+See the [service platform research](docs/research/service-platform-benchmark-v1.0.md) and [pilot plan v1.0](docs/plans/service-board-learning-v1.0.md) for the next test.
+
 ## Brand and UI
 
 Read the [brand kit](docs/brand-kit.md) and [UI library guide](docs/ui-library.md). Open `/design-system` to use the live examples and download the logo files and CSS tokens.
