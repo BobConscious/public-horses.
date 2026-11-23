@@ -80,6 +80,12 @@ CREATE TABLE IF NOT EXISTS project_profiles (
 ) STRICT;
 CREATE INDEX IF NOT EXISTS projects_by_profile ON project_profiles(profile_id, profile_version);
 
+CREATE TABLE IF NOT EXISTS project_images (
+  project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+  alt TEXT NOT NULL CHECK (length(alt) BETWEEN 1 AND 200),
+  bytes BLOB NOT NULL CHECK (length(bytes) > 0)
+) STRICT;
+
 CREATE TABLE IF NOT EXISTS needs (
   project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   type TEXT NOT NULL CHECK (type IN ('funding', 'supplies', 'time', 'skills')),

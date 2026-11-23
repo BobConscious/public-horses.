@@ -15,6 +15,7 @@ function ProjectOrganizer({ project }) {
 function ProjectCard({ project, heading: Heading }) {
   return (
     <article className="project-card">
+      {project.image && <img className="project-card-image" src={project.image.url} alt={project.image.alt} loading="lazy" decoding="async" />}
       <p className="project-card-type"><strong>{listingTypeName(project.listingType)}</strong><span>{fieldName(project.field)}</span></p>
       <Heading><a href={`/projects/${project.slug}`}>{project.title}</a></Heading>
       <p className="project-byline">By <ProjectOrganizer project={project} /></p>
@@ -245,6 +246,7 @@ export function ProjectPage({ slug, user, sessionReady }) {
             {project.schedule && <p className="project-schedule">{project.schedule}</p>}
             <p>{project.summary}</p>
             {project.demo && <p className="project-example">Preview listing. Organizer action links are disabled.</p>}
+            {project.image && <img className="project-detail-image" src={project.image.url} alt={project.image.alt} decoding="async" />}
           </section>
 
           <div className="project-body">

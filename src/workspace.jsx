@@ -5,6 +5,7 @@ import { useApi } from './http.js';
 import { signInLink } from './auth.jsx';
 import { Deadline, ErrorNotice, LoadState, fieldName, kindName, officialUrl, useLoad } from './ui.jsx';
 import { ProfileEditor, ProfileList } from './profile-editor.jsx';
+import { ListingImageEditor, ReviewListingImage, useListingImage, usePrivateListingImage } from './listing-image-editor.jsx';
 
 const statusLabels = {
   draft: 'Draft',
@@ -29,6 +30,7 @@ function SignedOut({ path, title, children }) {
 
 function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel }) {
   const api = useApi();
+  const image = useListingImage(project?.image);
   const [needs, setNeeds] = useState(() => project?.needs ?? []);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
@@ -48,13 +50,13 @@ function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel 
 
   async function save(event) {
     event.preventDefault();
-    if (submitting.current) return;
+    if (submitting.current || image.reading) return;
     if (!needs.length) {
       setError('Choose at least one way someone can help.');
       return;
     }
     const form = new FormData(event.currentTarget);
-    const body = { ...Object.fromEntries(form), needs, ...(project && { version: project.version }) };
+    const body = { ...Object.fromEntries(form), needs, image: image.imagePayload(), ...(project && { version: project.version }) };
     submitting.current = true;
     setPending(true);
     setError(null);
@@ -107,6 +109,7 @@ function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel 
         </div>
         <label>Short summary<textarea required name="summary" rows={2} maxLength={200} defaultValue={project?.summary} /></label>
         <label>Project description<textarea required name="story" rows={5} maxLength={4000} defaultValue={project?.story} /></label>
+        <ListingImageEditor editor={image} pending={pending} />
         <fieldset className="needs-editor">
           <legend>What do you need?</legend>
           {supportKinds.map(({ id, label }) => {
@@ -130,7 +133,7 @@ function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel 
         </label>
         <ErrorNotice error={error} />
         <div className="form-actions">
-          <button type="submit" disabled={pending} className="button button-primary">{pending ? 'Saving…' : 'Save draft'}</button>
+          <button type="submit" disabled={pending || image.reading} className="button button-primary">{pending ? 'Saving…' : 'Save draft'}</button>
           <button type="button" disabled={pending} className="button button-plain" onClick={onCancel}>Cancel</button>
         </div>
       </form>
@@ -237,6 +240,8 @@ export function Workspace({ user, sessionReady }) {
 
 function ReviewCard({ project, onDecision }) {
   const api = useApi();
+  const preview = usePrivateListingImage(project.image);
+  const canPublish = !project.image || Boolean(preview.data?.dataUrl);
   const [note, setNote] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
@@ -249,7 +254,7 @@ function ReviewCard({ project, onDecision }) {
     event.preventDefault();
     if (saving.current) return;
     const decision = event.nativeEvent.submitter?.value;
-    if (!decision) return;
+    if (!decision || (decision === 'publish' && !canPublish)) return;
     if (decision === 'changes_requested' && !note.trim()) {
       setError('Write what the organizer should change.');
       return;
@@ -288,6 +293,7 @@ function ReviewCard({ project, onDecision }) {
       </section>
       <p>{project.summary}</p>
       <p className="review-story">{project.story}</p>
+      {project.image && <ReviewListingImage image={project.image} preview={preview} />}
       <ul className="review-needs">
         {project.needs.map((need) => {
           const url = officialUrl(need.url);
@@ -300,7 +306,7 @@ function ReviewCard({ project, onDecision }) {
         <ErrorNotice error={error} />
         <div className="form-actions">
           <button type="submit" value="changes_requested" className="button button-outline" disabled={pending}>Request changes</button>
-          <button type="submit" value="publish" className="button button-primary" disabled={pending}>Publish project</button>
+          <button type="submit" value="publish" className="button button-primary" disabled={pending || !canPublish}>Publish project</button>
         </div>
       </form>
     </article>

@@ -1,6 +1,7 @@
 import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { Router, json } from 'express';
+import { listingImageInput } from './listing-image.js';
 import { emailAddress, HttpError, requireThat, text } from './validation.js';
 
 const derive = promisify(scrypt);
@@ -97,6 +98,10 @@ export function createApi(store, { demo = false, secureCookies = false, clerk } 
     : { mode: 'local' }));
   api.get('/projects', (_req, res) => res.json({ projects: store.listPublic(demo) }));
   api.get('/projects/:slug', (req, res) => res.json({ project: store.getPublic(req.params.slug, demo) }));
+  api.get('/projects/:slug/image', (req, res) => {
+    const image = store.getPublicProjectImage(req.params.slug, demo);
+    res.type('image/webp').send(image);
+  });
   api.get('/profiles/:slug', (req, res) => res.json(store.getPublicProfile(req.params.slug, demo)));
 
   if (clerk) {
@@ -108,6 +113,18 @@ export function createApi(store, { demo = false, secureCookies = false, clerk } 
       next();
     });
   }
+
+  const projectJson = json({ limit: '3mb', inflate: false });
+  api.post('/projects', signedIn, projectJson, async (req, res) => {
+    const input = body(req);
+    const image = await listingImageInput(input.image);
+    res.status(201).json({ project: store.createProject(req.member.id, input, image) });
+  });
+  api.patch('/mine/projects/:id', signedIn, projectJson, async (req, res) => {
+    const input = body(req);
+    const image = await listingImageInput(input.image);
+    res.json({ project: store.updateProject(req.member.id, req.params.id, input, image) });
+  });
   api.use(json({ limit: '24kb' }));
 
   api.get('/session', async (req, res) => {
@@ -144,11 +161,11 @@ export function createApi(store, { demo = false, secureCookies = false, clerk } 
   api.patch('/mine/profiles/:id', signedIn, (req, res) =>
     res.json({ profile: store.updateProfile(req.member.id, req.params.id, body(req)) }));
 
-  api.post('/projects', signedIn, (req, res) =>
-    res.status(201).json({ project: store.createProject(req.member.id, body(req)) }));
   api.get('/mine/projects', signedIn, (req, res) => res.json({ projects: store.listOwned(req.member.id) }));
-  api.patch('/mine/projects/:id', signedIn, (req, res) =>
-    res.json({ project: store.updateProject(req.member.id, req.params.id, body(req)) }));
+  api.get('/project-images/:id/preview', signedIn, (req, res) => {
+    const image = store.getProjectImagePreview(req.params.id, req.member);
+    res.json({ dataUrl: 'data:image/webp;base64,' + image.toString('base64') });
+  });
   api.post('/mine/projects/:id/submit', signedIn, (req, res) =>
     res.json({ project: store.submitProject(req.member.id, req.params.id, body(req).version) }));
   api.post('/mine/projects/:id/close', signedIn, (req, res) =>

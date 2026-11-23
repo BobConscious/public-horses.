@@ -59,7 +59,7 @@ For hosting, set the exact HTTPS origin. Rehearse with development keys and use 
 ## How the marketplace works
 
 1. **Organize.** Create a person or organization profile in the workspace. Use it to list a project, volunteer opportunity, or event. Add a schedule when it helps. Provide an end date, official support links, and a private source for review.
-2. **Review.** A separate reviewer checks the submitted listing and profile. Approval makes that version public. Later profile edits stay private until a reviewer approves a listing that uses them. Expired and closed listings leave the directory.
+2. **Review.** A separate reviewer checks the listing, profile, and any image. Approval makes that version public. Later profile edits stay private until a reviewer approves a listing that uses them. Expired and closed listings leave the directory.
 3. **Support.** Filter by field and open a specific ask. Give through the organizer’s own channel. Sign in to record help you already gave and choose an intention.
 4. **Grow.** Each saved act earns one private seed. Plant it, water it once a day, and harvest after three waterings. Your account keeps the garden and its optional notes.
 
@@ -67,7 +67,9 @@ For hosting, set the exact HTTPS origin. Rehearse with development keys and use 
 
 ## Data and operation
 
-The React site and Express API run on one origin. SQLite stores accounts, sessions, projects, review decisions, and garden records. The demo and regular app use separate files in `.data/`. Launch a built copy with `npm run build` and `npm start`.
+The React site and Express API run on one origin. SQLite stores accounts, sessions, projects, listing images, review decisions, and garden records. The demo and regular app use separate files in `.data/`. Launch a built copy with `npm run build` and `npm start`.
+
+Each listing can have one image. The editor accepts JPEG, PNG, or WebP files up to 2 MB and asks for a short image description. The server resizes the image and removes file metadata.
 
 A hosted copy needs a persistent volume for `PH_DB_PATH` and an HTTPS `PH_ORIGIN` behind a TLS proxy that preserves the request host. Set `HOST` and `PORT` for that host. Use Clerk for hosted identity and maintain backups and reviewer access.
 
@@ -77,3 +79,4 @@ Fast for Hunger is the proposed first pilot partner. It can link to Nourishment 
 
 - [Flower Garden and Bungalow, Bermuda](https://www.metmuseum.org/art/collection/search/11121), Winslow Homer, 1899. The Metropolitan Museum of Art.
 - [Swamp Azalea](https://americanart.si.edu/artwork/swamp-azalea-azalea-viscosa-26378), Mary Vaux Walcott, 1918. Smithsonian American Art Museum.
+- [City and Sunset](https://www.metmuseum.org/art/collection/search/10872), Henry Farrer. The Metropolitan Museum of Art. Sample listing illustration.

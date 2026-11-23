@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs';
+
+const sunset = readFileSync(new URL('./fixtures/city-sunset.webp', import.meta.url));
+
 export function seedDemo(store) {
   const endsAt = store.demoEndDate();
   store.addDemoProjects([
@@ -85,6 +89,7 @@ export function seedDemo(store) {
       slug: 'fast-for-hunger-new-moon-meditation',
       title: 'Fast for Hunger new moon meditation',
       organization: 'Fast for Hunger',
+      demoImage: { bytes: sunset, alt: 'A golden sky over a distant city skyline, painted by Henry Farrer.' },
       profile: {
         kind: 'organization',
         name: 'Fast for Hunger',

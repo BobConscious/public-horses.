@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { randomUUID } from 'node:crypto';
+import sharp from 'sharp';
 import { createApp } from '../server/index.js';
 import { seedDemo } from '../server/demo.js';
 import { createStore } from '../server/store.js';
@@ -50,7 +51,9 @@ async function running(t, { demo = false } = {}) {
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
-      const data = await response.json();
+      const data = response.headers.get('content-type')?.startsWith('image/')
+        ? Buffer.from(await response.arrayBuffer())
+        : await response.json();
       if (expect) assert.equal(response.status, expect, JSON.stringify(data));
       const setCookie = response.headers.get('set-cookie');
       if (setCookie) cookie = setCookie.split(';', 1)[0];
@@ -103,6 +106,90 @@ test('an organizer submits, gets feedback, and a different reviewer publishes th
   await owner(mine + '/close', { method: 'POST', body: { version: published.version } });
   assert.deepEqual((await guest('/projects')).data.projects, []);
   assert.equal((await guest('/projects/' + draft.slug)).data.project.open, false);
+});
+
+test('listing images remain private through review and publish as sanitized WebP', async (t) => {
+  const { client, store } = await running(t);
+  const guest = client();
+  const owner = client();
+  const reviewer = client();
+  const stranger = client();
+  await signup(owner, 'Organizer');
+  store.setReviewer(await signup(reviewer, 'Reviewer'));
+  await signup(stranger, 'Stranger');
+
+  const jpeg = await sharp({
+    create: { width: 1600, height: 900, channels: 3, background: '#386147' },
+  }).withExif({ IFD0: { Artist: 'Synthetic test' } }).jpeg().toBuffer();
+  const image = { data: jpeg.toString('base64'), alt: 'A green test image' };
+  await owner('/projects', { method: 'POST', body: { ...request, image: { alt: image.alt } }, expect: 400 });
+  await owner('/projects', { method: 'POST', body: { ...request, image: { ...image, alt: '' } }, expect: 400 });
+  await owner('/projects', {
+    method: 'POST', body: { ...request, image: { ...image, data: Buffer.from('Not an image').toString('base64') } }, expect: 400,
+  });
+  assert.deepEqual((await owner('/mine/projects')).data.projects, []);
+  const { data: { project: draft } } = await owner('/projects', {
+    method: 'POST', body: { ...request, image }, expect: 201,
+  });
+  const mine = '/mine/projects/' + draft.id;
+  const publicPath = '/projects/' + draft.slug + '/image';
+  const privatePath = '/project-images/' + draft.id + '/preview';
+  assert.deepEqual(draft.image, { url: '/api' + privatePath, alt: image.alt });
+  await guest(publicPath, { expect: 404 });
+  await guest(privatePath, { expect: 401 });
+  await reviewer(privatePath, { expect: 404 });
+  await stranger(privatePath, { expect: 404 });
+  const original = (await owner(privatePath)).data.dataUrl;
+  assert.match(original, /^data:image\/webp;base64,/u);
+
+  const { data: { project: cleared } } = await owner(mine, {
+    method: 'PATCH', body: { ...request, version: draft.version, image: null },
+  });
+  assert.equal(cleared.image, null);
+  await owner(privatePath, { expect: 404 });
+  const { data: { project: restored } } = await owner(mine, {
+    method: 'PATCH', body: { ...request, version: cleared.version, image },
+  });
+  const { data: { project: edited } } = await owner(mine, {
+    method: 'PATCH', body: { ...request, version: restored.version, summary: 'Pack groceries next Saturday.' },
+  });
+  assert.deepEqual(edited.image, draft.image);
+  const newAlt = 'Green landscape illustration for the test listing';
+  const { data: { project: described } } = await owner(mine, {
+    method: 'PATCH', body: { ...request, version: edited.version, image: { alt: newAlt } },
+  });
+  assert.equal(described.image.alt, newAlt);
+  assert.equal((await owner(privatePath)).data.dataUrl, original);
+  const { data: { project: submitted } } = await owner(mine + '/submit', {
+    method: 'POST', body: { version: described.version },
+  });
+  await owner(mine, { method: 'PATCH', body: { ...request, version: submitted.version, image: null }, expect: 409 });
+  await guest(publicPath, { expect: 404 });
+  assert.equal((await reviewer(privatePath)).data.dataUrl, original);
+  await reviewer('/review/' + draft.id, {
+    method: 'POST', body: { version: submitted.version, decision: 'publish', note: 'Checked the submitted image.' },
+  });
+  assert.deepEqual((await guest('/projects')).data.projects[0].image, { url: '/api' + publicPath, alt: newAlt });
+  const { data: publishedImage, response } = await guest(publicPath);
+  assert.equal(response.headers.get('content-type'), 'image/webp');
+  assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  assert.deepEqual(publishedImage, Buffer.from(original.split(',')[1], 'base64'));
+  const { format, width, exif } = await sharp(publishedImage).metadata();
+  assert.equal(format, 'webp');
+  assert.equal(width, 1280);
+  assert.equal(exif, undefined);
+});
+
+test('the demo has a sample image and keeps images optional', async (t) => {
+  const { client } = await running(t, { demo: true });
+  const guest = client();
+  const { data: { projects } } = await guest('/projects');
+  const event = projects.find(({ id }) => id === 'demo-fast-for-hunger');
+  assert.equal(projects.filter(({ image }) => image).length, 1);
+  assert.match(event.image.alt, /city skyline/u);
+  const { data } = await guest(event.image.url.slice('/api'.length));
+  assert.equal((await sharp(data).metadata()).format, 'webp');
 });
 
 test('support retries add one private seed, and plants grow across separate days', async (t) => {

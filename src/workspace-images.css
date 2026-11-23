@@ -1,0 +1,7 @@
+.stack-form .listing-image-editor { border: 1px solid var(--line); border-radius: 6px; padding: 13px; }
+.listing-image-editor legend { font-size: 14px; font-weight: 650; padding-inline: 5px; }
+.workspace-listing-image { display: block; max-width: min(100%, 420px); max-height: 280px; object-fit: contain; }
+.remove-listing-image { justify-self: start; }
+.review-listing-image { margin-block: 12px; }
+.review-listing-image figure { margin: 0; }
+.review-listing-image figcaption { margin-top: 5px; color: var(--muted); font-size: 13px; }

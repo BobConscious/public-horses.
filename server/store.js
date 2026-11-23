@@ -148,6 +148,7 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
     const needs = all('SELECT type, detail, url FROM needs WHERE project_id = ? ORDER BY rowid', row.id);
     const open = isOpen(row, on);
     const link = projectLink(row.id);
+    const image = get('SELECT alt FROM project_images WHERE project_id = ?', row.id);
     const editable = internal && (row.status === 'draft' || row.status === 'changes_requested');
     const profile = profileView(editable ? currentProfile(link.profile_id) :
       get(`${profileDetails} WHERE p.id = ? AND v.version = ?`, link.profile_id, link.profile_version));
@@ -155,6 +156,9 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
       id: row.id, slug: row.slug, title: row.title, organization: profile.name, profile, location: row.location,
       summary: row.summary, story: row.story, field: row.field, endsAt: row.ends_at, listingType: link.listing_type,
       schedule: link.schedule,
+      image: image ? { alt: image.alt, url: internal
+        ? `/api/project-images/${encodeURIComponent(row.id)}/preview`
+        : `/api/projects/${encodeURIComponent(row.slug)}/image` } : null,
       needs: needs.map(({ type, detail, url }) => ({ type, detail, url: open || internal ? url : null })),
       open, art: row.art, demo: Boolean(row.demo),
     };
@@ -169,6 +173,29 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
     return row;
   }
 
+  function publicProject(slug, includeDemo) {
+    const row = get(`SELECT * FROM projects WHERE slug = ? AND status IN ('published', 'closed')
+      AND (demo = 0 OR ? = 1)`, slug, Number(includeDemo));
+    requireThat(row, 404, 'Project not found.');
+    return row;
+  }
+
+  function setProjectImage(id, image) {
+    if (image === undefined) return;
+    if (image === null) {
+      run('DELETE FROM project_images WHERE project_id = ?', id);
+      return;
+    }
+    if (image.bytes === undefined) {
+      const result = run('UPDATE project_images SET alt = ? WHERE project_id = ?', image.alt, id);
+      requireThat(result.changes === 1, 400, 'Choose an image file before adding a description.');
+      return;
+    }
+    run(`INSERT INTO project_images(project_id, alt, bytes) VALUES(?, ?, ?)
+      ON CONFLICT(project_id) DO UPDATE SET alt = excluded.alt, bytes = excluded.bytes`,
+    id, image.alt, image.bytes);
+  }
+
   function replaceNeeds(id, needs) {
     run('DELETE FROM needs WHERE project_id = ?', id);
     for (const { type, detail, url } of needs) {
@@ -177,7 +204,7 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
   }
 
   function insertProject(data, owner, profile, { id = randomUUID(), slug = resourceSlug(data.title, id, 'project'),
-    status = 'draft', version = 1, art = fieldArt[data.field] ?? '', demo = 0 } = {}) {
+    status = 'draft', version = 1, art = fieldArt[data.field] ?? '', demo = 0, image } = {}) {
     const stamp = now();
     run(`INSERT INTO projects(id, slug, owner_id, title, organization, location, summary, story, field, ends_at,
           proof_url, status, version, art, demo, created_at, updated_at)
@@ -186,6 +213,7 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
     status, version, art, demo, stamp, stamp);
     setProjectProfile(id, owner, profile, data.listingType, data.schedule);
     replaceNeeds(id, data.needs);
+    setProjectImage(id, image);
     return projectView(byId(id), stamp.slice(0, 10), true);
   }
 
@@ -322,21 +350,31 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
       return rows.map((row) => projectView(row, on));
     },
     getPublic(slug, includeDemo = false) {
-      const row = get(`SELECT * FROM projects WHERE slug = ? AND status IN ('published', 'closed')
-        AND (demo = 0 OR ? = 1)`, slug, Number(includeDemo));
-      requireThat(row, 404, 'Project not found.');
-      return projectView(row, today());
+      return projectView(publicProject(slug, includeDemo), today());
+    },
+    getPublicProjectImage(slug, includeDemo = false) {
+      const project = publicProject(slug, includeDemo);
+      const image = get('SELECT bytes FROM project_images WHERE project_id = ?', project.id);
+      requireThat(image, 404, 'Project image not found.');
+      return Buffer.from(image.bytes);
+    },
+    getProjectImagePreview(id, member) {
+      const image = get(`SELECT i.bytes FROM project_images i JOIN projects p ON p.id = i.project_id
+        WHERE p.id = ? AND p.demo = 0 AND (p.owner_id = ? OR (p.status = 'submitted' AND ? = 1))`,
+      id, member.id, Number(member.reviewer));
+      requireThat(image, 404, 'Project image not found.');
+      return Buffer.from(image.bytes);
     },
     listOwned(owner) {
       const on = today();
       return all('SELECT * FROM projects WHERE owner_id = ? ORDER BY updated_at DESC, id', owner)
         .map((row) => projectView(row, on, true));
     },
-    createProject(owner, input) {
+    createProject(owner, input, image) {
       const data = projectInput(input, today());
-      return transaction(() => insertProject(data, owner, selectProjectProfile(owner, data)));
+      return transaction(() => insertProject(data, owner, selectProjectProfile(owner, data), { image }));
     },
-    updateProject(owner, id, input) {
+    updateProject(owner, id, input, image) {
       return transaction(() => {
         const row = ownedProject(id, owner);
         expectVersion(input.version, row);
@@ -353,6 +391,7 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
         data.proofUrl, fieldArt[data.field] ?? '', stamp, id);
         setProjectProfile(id, owner, profile, data.listingType, data.schedule);
         replaceNeeds(id, data.needs);
+        setProjectImage(id, image);
         return projectView(byId(id), on, true);
       });
     },
@@ -468,16 +507,19 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
           run('INSERT INTO members(id, name, email, password_hash) VALUES(?, ?, ?, ?)', demoReviewer,
             'Sample review team', 'reviewer@demo.invalid', 'disabled');
         }
-        for (const { id, slug, art, profile: inputProfile, ...input } of projects) {
+        for (const { id, slug, art, demoImage, profile: inputProfile, ...input } of projects) {
           const existing = byId(id);
           if (existing && (existing.owner_id !== demoOrganizer || !existing.demo)) continue;
           const data = projectInput(input, today(), { demo: true });
           const profile = demoProfile(inputProfile, data.organization);
           if (existing) {
             setProjectProfile(id, demoOrganizer, profile, data.listingType, data.schedule);
+            setProjectImage(id, demoImage);
             continue;
           }
-          insertProject(data, demoOrganizer, profile, { id, slug, art, demo: 1, version: 3, status: 'published' });
+          insertProject(data, demoOrganizer, profile, {
+            id, slug, art, demo: 1, version: 3, status: 'published', image: demoImage,
+          });
           run('INSERT INTO reviews(project_id, version, reviewer_id, decision, note, created_at) VALUES(?, ?, ?, ?, ?, ?)',
             id, 2, demoReviewer, 'publish', 'Fictional request for the demo.', now());
         }
