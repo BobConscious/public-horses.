@@ -5,9 +5,11 @@ import { api } from './http.js';
 import { AboutPage } from './about.jsx';
 import { AccountPage } from './auth.jsx';
 import { HomePage, ProjectPage, clearSupportAttempts } from './catalog.jsx';
+import { Button } from './components/controls.jsx';
 import { ProfilePage } from './profiles.jsx';
 import { Review, Workspace } from './workspace.jsx';
 import { ErrorNotice, LoadState, useLoad } from './ui.jsx';
+import './tokens.css';
 import './styles.css';
 import Garden from './garden.jsx';
 
@@ -65,9 +67,9 @@ function Header({ path, user, signedIn = Boolean(user), onSignOut = signOutLocal
             {user?.reviewer && <a href="/review" aria-current={current('/review')}>Review</a>}
           </div>
           <div className="nav-account">
-            {signedIn ? <button type="button" className="button button-plain" disabled={signingOut} onClick={signOut}>Sign out</button>
-              : <a href="/sign-in" className="button button-plain">Sign in</a>}
-            {!user && <a href="/workspace" className="button button-primary">Start a project</a>}
+            {signedIn ? <Button variant="plain" disabled={signingOut} onClick={signOut}>Sign out</Button>
+              : <Button href="/sign-in" variant="plain">Sign in</Button>}
+            {!user && <Button href="/workspace">Start a project</Button>}
           </div>
         </nav>
       </div>
@@ -112,6 +114,11 @@ function App({ AuthPage = AccountPage, onSignOut, clerkSessionId }) {
   let page;
   if (path === '/') page = <HomePage />;
   else if (path === '/about') page = <AboutPage />;
+  else if (path === '/design-system') page = (
+    <Suspense fallback={<p className="loading container" role="status">Loading the UI library…</p>}>
+      <DesignSystem />
+    </Suspense>
+  );
   else if (projectPath) page = <ProjectPage slug={projectPath[1]} user={user} sessionReady={sessionReady} />;
   else if (profilePath) page = <ProfilePage slug={profilePath[1]} />;
   else if (path === '/garden') page = <Garden user={user} />;
@@ -137,6 +144,7 @@ function App({ AuthPage = AccountPage, onSignOut, clerkSessionId }) {
 }
 
 const ClerkApp = lazy(() => import('./clerk.jsx'));
+const DesignSystem = lazy(() => import('./design-system.jsx'));
 
 function Root() {
   const config = useLoad('/auth-config');

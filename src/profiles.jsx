@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
-import { ProjectCards } from './catalog.jsx';
+import { Button } from './components/controls.jsx';
+import { ProjectCards } from './components/listings.jsx';
 import { LoadState, officialUrl, profileKindName, useLoad } from './ui.jsx';
 
 export function ProfilePage({ slug }) {
@@ -18,7 +19,7 @@ export function ProfilePage({ slug }) {
             {profile.demo && <p className="project-example">Preview profile</p>}
             {profile.location && <p>{profile.location}</p>}
             {profile.bio && <p className="profile-bio">{profile.bio}</p>}
-            {website && <a className="button button-outline" href={website} target="_blank" rel="noopener noreferrer">Visit website</a>}
+            {website && <Button variant="outline" href={website} target="_blank" rel="noopener noreferrer">Visit website</Button>}
           </header>
           <section className="profile-projects" aria-labelledby="profile-projects-title">
             <h2 id="profile-projects-title">Open listings</h2>

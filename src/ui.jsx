@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fields, listingTypes, profileKinds, supportKinds } from '../shared/catalog.js';
 import { useApi } from './http.js';
+import { Button, Notice } from './components/controls.jsx';
 
 export function fieldName(id) {
   return fields.find((field) => field.id === id)?.label ?? id;
@@ -43,7 +44,7 @@ export function useLoad(path) {
 
 export function ErrorNotice({ error }) {
   if (!error) return null;
-  return <p className="notice notice-error" role="alert">{error.message ?? error}</p>;
+  return <Notice tone="error">{error.message ?? error}</Notice>;
 }
 
 export function LoadState({ state }) {
@@ -51,7 +52,7 @@ export function LoadState({ state }) {
   return (
     <div className="empty-state">
       <ErrorNotice error={state.error} />
-      <button className="button button-outline" type="button" onClick={state.reload}>Try again</button>
+      <Button variant="outline" onClick={state.reload}>Try again</Button>
     </div>
   );
 }
@@ -83,7 +84,7 @@ export function EmptyProjects({ filtered, onReset }) {
     <div className="empty-state">
       <h2>{filtered ? 'No matching projects' : 'No open projects yet'}</h2>
       <p>{filtered ? 'Change a filter or search term.' : 'Projects appear here after review.'}</p>
-      {filtered && <button className="button button-outline" type="button" onClick={onReset}>Clear filters</button>}
+      {filtered && <Button variant="outline" onClick={onReset}>Clear filters</Button>}
     </div>
   );
 }

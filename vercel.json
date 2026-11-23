@@ -9,7 +9,7 @@
   },
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/preview" },
-    { "source": "/:page(about|garden|workspace|review|sign-in|sign-up)", "destination": "/index.html" },
+    { "source": "/:page(about|design-system|garden|workspace|review|sign-in|sign-up)", "destination": "/index.html" },
     { "source": "/projects/:slug", "destination": "/index.html" },
     { "source": "/profiles/:slug", "destination": "/index.html" }
   ]

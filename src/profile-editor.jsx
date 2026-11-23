@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import { profileKinds } from '../shared/catalog.js';
 import { useApi } from './http.js';
 import { ErrorNotice, LoadState } from './ui.jsx';
+import { Button, Field } from './components/controls.jsx';
 import './workspace-profiles.css';
 
 export function ProfileList({ state, busy, onAdd, onEdit, children }) {
@@ -10,9 +11,9 @@ export function ProfileList({ state, busy, onAdd, onEdit, children }) {
     <section className="workspace-profiles" aria-labelledby="workspace-profiles-heading">
       <div className="workspace-profiles-heading">
         <h2 id="workspace-profiles-heading">Your profiles</h2>
-        <button type="button" className="button button-outline" disabled={busy || !state.data} onClick={onAdd}>
+        <Button variant="outline" disabled={busy || !state.data} onClick={onAdd}>
           <Plus size={17} aria-hidden="true" /> New profile
-        </button>
+        </Button>
       </div>
       {children}
       {!state.data ? <LoadState state={state} /> : state.data.profiles.length ? (
@@ -23,8 +24,8 @@ export function ProfileList({ state, busy, onAdd, onEdit, children }) {
                 <h3>{profile.name}</h3>
                 <p>{profileKinds.find(({ id }) => id === profile.kind)?.label}{profile.location && ` · ${profile.location}`}</p>
               </div>
-              <button type="button" className="button button-outline" disabled={busy}
-                aria-label={`Edit profile for ${profile.name}`} onClick={() => onEdit(profile)}>Edit profile</button>
+              <Button variant="outline" disabled={busy}
+                aria-label={`Edit profile for ${profile.name}`} onClick={() => onEdit(profile)}>Edit profile</Button>
             </li>
           ))}
         </ul>
@@ -70,32 +71,27 @@ export function ProfileEditor({ profile, hasPerson, startProject, onSaved, onCan
         : 'Your profile appears online after a project using it passes review.'}</p>
       <form className="stack-form" onSubmit={save}>
         <fieldset disabled={pending}>
-          {!profile && <label>Profile type
-            <select name="kind" required defaultValue={hasPerson ? 'organization' : ''}>
+          {!profile && (
+            <Field label="Profile type" as="select" name="kind" required defaultValue={hasPerson ? 'organization' : ''}>
               <option value="" disabled>Choose a type</option>
               {profileKinds.map(({ id, label }) => <option key={id} value={id} disabled={hasPerson && id === 'person'}>{label}</option>)}
-            </select>
-          </label>}
-          <label>Public name<input name="name" maxLength={96} required defaultValue={profile?.name} /></label>
+            </Field>
+          )}
+          <Field label="Public name" name="name" maxLength={96} required defaultValue={profile?.name} />
           <div className="form-columns">
-            <label><span>Location <span className="optional">Optional</span></span>
-              <input name="location" maxLength={96} defaultValue={profile?.location} />
-            </label>
-            <label><span>Website <span className="optional">Optional</span></span>
-              <input name="websiteUrl" type="url" maxLength={1000} placeholder="https://" defaultValue={profile?.websiteUrl} />
-            </label>
+            <Field label="Location" optional name="location" maxLength={96} defaultValue={profile?.location} />
+            <Field label="Website" optional name="websiteUrl" type="url" maxLength={1000} placeholder="https://"
+              defaultValue={profile?.websiteUrl} />
           </div>
-          <label><span>About this profile <span className="optional">Optional</span></span>
-            <textarea name="bio" rows={4} maxLength={2000} defaultValue={profile?.bio} />
-          </label>
+          <Field label="About this profile" optional as="textarea" name="bio" rows={4} maxLength={2000} defaultValue={profile?.bio} />
         </fieldset>
         <ErrorNotice error={error} />
         <div className="form-actions">
-          <button type="submit" disabled={pending} className="button button-primary">
+          <Button type="submit" disabled={pending}>
             {pending ? 'Saving…' : startProject ? 'Save profile and continue' : 'Save profile'}
-          </button>
-          <button type="button" disabled={pending} className="button button-plain" onClick={onCancel}>Cancel</button>
-          {error?.status === 409 && <button type="button" className="button button-outline" onClick={onReload}>Discard edits and reload</button>}
+          </Button>
+          <Button variant="plain" disabled={pending} onClick={onCancel}>Cancel</Button>
+          {error?.status === 409 && <Button variant="outline" onClick={onReload}>Discard edits and reload</Button>}
         </div>
       </form>
     </section>

@@ -1,0 +1,111 @@
+.search-label, .field-filters legend {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-control);
+  font-weight: 650;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  padding-inline: var(--space-3) var(--space-1);
+  color: var(--muted);
+}
+
+.search-box > svg { flex: 0 0 auto; }
+.search-box:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.search-box input { flex: 1; min-width: 0; min-height: var(--control-min); border: 0; outline: 0; background: transparent; font-size: var(--text-body); }
+.search-box button { display: grid; min-width: var(--control-min); min-height: var(--control-min); place-items: center; background: none; border: 0; }
+.search-box input::-webkit-search-cancel-button { display: none; }
+
+.catalog-type-label {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+  font-size: var(--text-control);
+  font-weight: 650;
+}
+
+.catalog-type-label select {
+  width: 100%;
+  min-height: var(--control-min);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  font-size: var(--text-body);
+  font-weight: 400;
+}
+
+.field-filters { margin: var(--space-6) 0 0; padding: 0; border: 0; min-width: 0; }
+.field-options { display: grid; }
+.field-filters button {
+  min-height: var(--control-min);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  text-align: left;
+  color: var(--muted);
+  font-weight: 590;
+  font-size: var(--text-control);
+}
+.field-filters button:hover { background: var(--sage); }
+.field-filters button[aria-pressed='true'] {
+  background: var(--sage);
+  border-color: var(--forest);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.project-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 282px), 1fr)); gap: var(--space-4); }
+.project-card {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(var(--space-4), 1.85vw, var(--space-6));
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--forest);
+  background: var(--paper);
+  overflow-wrap: anywhere;
+}
+.project-card-type { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); margin-bottom: var(--space-3); color: var(--muted); font-size: var(--text-caption); }
+.project-card-type strong { color: var(--forest); font-weight: 700; }
+.project-card :is(h2, h3) { font-size: clamp(25px, 2.35vw, 33px); letter-spacing: -.036em; }
+.project-card-link {
+  text-decoration: underline;
+  text-decoration-color: var(--control-border);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+.project-card-link svg { vertical-align: -.11em; color: var(--forest); }
+.project-card-link:hover, .profile-link:hover { color: var(--forest); text-decoration-color: currentColor; }
+.project-byline { margin-top: var(--space-2); color: var(--muted); font-size: var(--text-control); }
+.profile-link { color: var(--ink); font-weight: 650; text-decoration: underline; text-decoration-color: var(--control-border); text-underline-offset: 3px; }
+.project-card-summary { display: flex; align-items: flex-start; gap: var(--space-3); margin-block: var(--space-3) var(--space-4); }
+.project-summary { flex: 1; max-width: 58ch; color: var(--muted); }
+.project-card-image {
+  width: clamp(72px, 31%, 122px);
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+}
+.project-facts { display: grid; gap: var(--space-1); margin: auto 0 0; padding-top: var(--space-3); border-top: 1px solid var(--line); color: var(--muted); font-size: var(--text-caption); }
+.project-facts div { display: grid; grid-template-columns: minmax(85px, .37fr) minmax(0, 1fr); gap: var(--space-2); }
+.project-facts dt { font-weight: 650; }
+.project-facts dd { margin: 0; }
+
+@media (max-width: 770px) {
+  .field-filters { margin-top: var(--space-4); }
+  .field-options { display: flex; flex-wrap: wrap; column-gap: var(--space-2); }
+  .field-filters button { border-left: 0; border-bottom: 2px solid transparent; }
+}
+
+@media (max-width: 530px) {
+  .field-options { column-gap: var(--space-1); }
+  .field-filters button { padding-inline: var(--space-2); }
+}

@@ -2,6 +2,10 @@
 
 **Kshetra** helps people find projects that serve their communities. See what a project needs, offer help directly, and grow a private garden from the acts you record. A member can organize projects and support other organizers with one account.
 
+## Brand and UI
+
+Read the [brand kit](docs/brand-kit.md) and [UI library guide](docs/ui-library.md). Open `/design-system` to use the live examples and download the logo files and CSS tokens.
+
 ## Run the demo
 
 Use Node.js 24.14 or later in the 24 series.

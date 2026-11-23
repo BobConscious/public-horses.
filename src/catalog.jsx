@@ -1,61 +1,17 @@
 import { useRef, useState } from 'react';
-import { ArrowLeft, ArrowUpRight, CircleCheck, Search, X } from 'lucide-react';
-import { fields, listingTypes } from '../shared/catalog.js';
+import { ArrowLeft, ArrowUpRight, CircleCheck } from 'lucide-react';
+import { fields } from '../shared/catalog.js';
 import { useApi } from './http.js';
 import { signInLink } from './auth.jsx';
-import { dateLabel, Deadline, EmptyProjects, ErrorNotice, LoadState, fieldName, kindName, listingTypeName, officialUrl, useLoad } from './ui.jsx';
-
-const fieldFilters = [{ id: 'all', label: 'All fields' }, ...fields];
-
-function ProjectOrganizer({ project }) {
-  if (!project.profile) return <strong>{project.organization}</strong>;
-  return <a className="profile-link" href={`/profiles/${encodeURIComponent(project.profile.slug)}`}>{project.profile.name}</a>;
-}
-
-function ProjectCard({ project, heading: Heading }) {
-  return (
-    <article className="project-card">
-      {project.image && <img className="project-card-image" src={project.image.url} alt={project.image.alt} loading="lazy" decoding="async" />}
-      <p className="project-card-type"><strong>{listingTypeName(project.listingType)}</strong><span>{fieldName(project.field)}</span></p>
-      <Heading><a href={`/projects/${project.slug}`}>{project.title}</a></Heading>
-      <p className="project-byline">By <ProjectOrganizer project={project} /></p>
-      <p className="project-summary">{project.summary}</p>
-      <dl className="project-facts">
-        {project.location && <div><dt>Where</dt><dd>{project.location}</dd></div>}
-        {project.schedule && <div><dt>When</dt><dd>{project.schedule}</dd></div>}
-        <div><dt>Ways to help</dt><dd>{project.needs.map(({ type }) => kindName(type)).join(', ')}</dd></div>
-        {project.endsAt && !project.demo && <div><dt>Listing closes</dt><dd><time dateTime={project.endsAt}>{dateLabel(project.endsAt)}</time></dd></div>}
-      </dl>
-    </article>
-  );
-}
-
-export function ProjectCards({ projects, heading = 'h2' }) {
-  return <div className="project-cards">{projects.map((project) => <ProjectCard key={project.id} project={project} heading={heading} />)}</div>;
-}
+import { Button } from './components/controls.jsx';
+import { filterListings, initialListingFilters, ListingFilters, ProjectCards, ProjectOrganizer } from './components/listings.jsx';
+import { Deadline, EmptyProjects, ErrorNotice, LoadState, fieldName, kindName, listingTypeName, officialUrl, useLoad } from './ui.jsx';
 
 export function HomePage() {
   const load = useLoad('/projects');
-  const [field, setField] = useState('all');
-  const [listingType, setListingType] = useState('all');
-  const [search, setSearch] = useState('');
-  const terms = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const projects = load.data?.projects ?? [];
-  const filtered = field !== 'all' || listingType !== 'all' || terms.length > 0;
-  const matches = projects.filter((project) => {
-    if (field !== 'all' && project.field !== field) return false;
-    if (listingType !== 'all' && (project.listingType ?? 'project') !== listingType) return false;
-    const words = [project.title, project.profile?.name ?? project.organization, project.location, project.summary,
-      fieldName(project.field), listingTypeName(project.listingType), project.schedule,
-      ...project.needs.map(({ type, detail }) => `${kindName(type)} ${detail}`)].join(' ').toLowerCase();
-    return terms.every((term) => words.includes(term));
-  });
-
-  function resetFilters() {
-    setField('all');
-    setListingType('all');
-    setSearch('');
-  }
+  const [filters, setFilters] = useState(initialListingFilters);
+  const filtered = filters.field !== 'all' || filters.type !== 'all' || Boolean(filters.query.trim());
+  const matches = filterListings(load.data?.projects ?? [], filters);
 
   return (
     <>
@@ -64,39 +20,17 @@ export function HomePage() {
         <div className="garden-entrance-copy container">
           <h1 id="home-heading">Help a community project</h1>
           <p>Give money, supplies, time, or skills directly to the people doing the work.</p>
-          <a className="button button-primary" href="#projects">Browse projects</a>
+          <Button href="#projects">Browse projects</Button>
         </div>
       </section>
       <section id="projects" className="catalog-section container" aria-label="Project directory">
         <div className="catalog-layout">
-          <div className="catalog-controls">
-            <label className="search-label" htmlFor="project-search">Search projects</label>
-            <div className="search-box">
-              <Search size={17} strokeWidth={1.8} aria-hidden="true" />
-              <input id="project-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Try pantry" />
-              {search && <button type="button" aria-label="Clear search" onClick={() => setSearch('')}><X size={16} aria-hidden="true" /></button>}
-            </div>
-            <label className="catalog-type-label">
-              Listing type
-              <select value={listingType} onChange={(event) => setListingType(event.target.value)}>
-                <option value="all">All listings</option>
-                {listingTypes.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
-              </select>
-            </label>
-            <fieldset className="field-filters">
-              <legend>Filter by field</legend>
-              <div className="field-options">
-                {fieldFilters.map(({ id, label }) => (
-                  <button key={id} type="button" aria-pressed={field === id} onClick={() => setField(id)}>{label}</button>
-                ))}
-              </div>
-            </fieldset>
-          </div>
+          <ListingFilters filters={filters} onChange={setFilters} />
           <div className="catalog-results">
             {!load.data ? <LoadState state={load} /> : (
               <>
                 <p className="result-count" role="status">{matches.length} {matches.length === 1 ? 'listing' : 'listings'}</p>
-                {matches.length ? <ProjectCards projects={matches} /> : <EmptyProjects filtered={filtered} onReset={resetFilters} />}
+                {matches.length ? <ProjectCards projects={matches} /> : <EmptyProjects filtered={filtered} onReset={() => setFilters(initialListingFilters)} />}
               </>
             )}
           </div>
@@ -187,7 +121,7 @@ function SupportForm({ project, user }) {
         <CircleCheck size={32} aria-hidden="true" />
         <h2>Help recorded</h2>
         <p>You earned a seed for your private garden.</p>
-        <a className="button button-primary" href="/garden">Open my garden</a>
+        <Button href="/garden">Open my garden</Button>
       </div>
     );
   }
@@ -195,7 +129,7 @@ function SupportForm({ project, user }) {
   if (unavailable || !project.open && !attempt) {
     return (
       <div><ErrorNotice error={error ?? 'This project has closed.'} />
-        <a className="button button-outline" href="/garden">Open my garden</a>
+        <Button href="/garden" variant="outline">Open my garden</Button>
       </div>
     );
   }
@@ -219,8 +153,8 @@ function SupportForm({ project, user }) {
         <label className="check-field"><input type="checkbox" defaultChecked={Boolean(attempt)} required /> I already helped this project.</label>
       </fieldset>
       <ErrorNotice error={error} />
-      {error?.status === 401 ? <a className="button button-primary" href={signInLink(`/projects/${project.slug}`)}>Sign in to retry</a>
-        : <button className="button button-primary" type="submit" disabled={pending}>{pending ? 'Saving…' : attempt ? 'Retry save' : 'Save record'}</button>}
+      {error?.status === 401 ? <Button href={signInLink(`/projects/${project.slug}`)}>Sign in to retry</Button>
+        : <Button type="submit" disabled={pending}>{pending ? 'Saving…' : attempt ? 'Retry save' : 'Save record'}</Button>}
     </form>
   );
 }
@@ -263,7 +197,7 @@ export function ProjectPage({ slug, user, sessionReady }) {
                     return (
                       <li key={need.type}>
                         <div><h3>{kindName(need.type)}</h3><p>{need.detail}</p></div>
-                        {url && <a href={url} target="_blank" rel="noopener noreferrer" className="button button-outline">Visit organizer <ArrowUpRight size={17} aria-hidden="true" /></a>}
+                        {url && <Button href={url} target="_blank" rel="noopener noreferrer" variant="outline">Visit organizer <ArrowUpRight size={17} aria-hidden="true" /></Button>}
                       </li>
                     );
                   })}
@@ -276,7 +210,7 @@ export function ProjectPage({ slug, user, sessionReady }) {
                 <>
                   <p>Save a record after you help. Each record earns a seed for your garden.</p>
                   {user ? <SupportForm key={`${project.id}/${user.id}`} project={project} user={user} />
-                    : sessionReady ? <a className="button button-primary" href={signInLink(`/projects/${project.slug}`)}>Sign in to record help</a> : <p role="status">Checking your session…</p>}
+                    : sessionReady ? <Button href={signInLink(`/projects/${project.slug}`)}>Sign in to record help</Button> : <p role="status">Checking your session…</p>}
                 </>
               ) : <p>This project has closed.</p>}
             </aside>
