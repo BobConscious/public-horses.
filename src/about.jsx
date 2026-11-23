@@ -30,22 +30,22 @@ export function AboutPage() {
       <GardenScene id="about-heading" image="flower-path"
         alt="A gravel path curves between banks of late-summer flowers." first>
         <h1 id="about-heading">About <span>Public Horses</span></h1>
-        <p>In the Public Horse story, a village pooled money for a horse anyone could use.</p>
-        <p>Geshe Michael Roach uses that story to teach a way of life. We can spend our lives serving others, one act at a time.</p>
+        <p>In the Public Horse story, neighbors in an Asian village pooled their money to buy a horse. Anyone in the village could use it when they needed help.</p>
+        <p>Geshe Michael Roach uses that story to teach a way of life. For yogis, becoming a public horse means spending our lives serving others.</p>
         <Button href="/#projects">Find a way to serve</Button>
       </GardenScene>
       <GardenScene id="about-give" image="garden-pond"
         alt="Irises and daylilies edge a garden pond beside the path.">
-        <h2 id="about-give">A board for service</h2>
-        <p>Find a specific request and respond directly to the organizer. You can offer time, skills, supplies, or money.</p>
-        <p>Need help with work that serves others? Post a service opportunity as a person or an organization.</p>
+        <h2 id="about-give">A service board</h2>
+        <p>A person or organization posts a specific way to help. Another person fulfills the request by giving the help it asks for.</p>
+        <p>Respond directly to the organizer. Offer time, skills, supplies, or money. You can post one opportunity and serve on another with the same account.</p>
         <Button variant="outline" href="/workspace">Post a service opportunity</Button>
       </GardenScene>
       <GardenScene id="about-garden" image="horse-meadow"
         alt="A bay horse and a gray horse graze beyond a garden fence.">
         <h2 id="about-garden">Why a garden?</h2>
-        <p>Karmic correlations are patterns you notice between the help you give and what you experience later.</p>
-        <p>Record what you did and what you want to cultivate. Tend a seed in your private garden. Come back to record what you notice.</p>
+        <p>The private garden helps you study the karmic correlations of service. Notice how the help you give relates to what you experience later.</p>
+        <p>Record what you want to cultivate, what you did, and what you notice over time. Tend a seed for each act of service. Use what you learn to help create the world you want to live in.</p>
         <Button variant="outline" href="/garden">My garden</Button>
       </GardenScene>
     </div>
