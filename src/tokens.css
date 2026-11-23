@@ -1,0 +1,36 @@
+:root {
+  --cream: #f6f1e5;
+  --paper: #fffcf3;
+  --ink: #21392d;
+  --forest: #224733;
+  --forest-dark: #173523;
+  --muted: #556358;
+  --accent: #9a4838;
+  --sage: #e6ebd8;
+  --line: #d9d6c7;
+  --on-forest: #fffdf4;
+  --control-border: #758371;
+  --notice-surface: #f0e9d6;
+  --notice-border: #e2d4b9;
+  --error-ink: #793623;
+  --error-surface: #f8e5df;
+  --error-border: #e7bcb0;
+
+  --font-display: Georgia, 'Palatino Linotype', serif;
+  --font-serif: var(--font-display);
+  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --text-body: 1rem;
+  --text-control: .875rem;
+  --text-caption: .8125rem;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --radius-control: 3px;
+  --radius-panel: 6px;
+  --control-min: 44px;
+  --motion-control: 180ms;
+}
