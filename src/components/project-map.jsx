@@ -30,7 +30,7 @@ function projectHref(project) {
   return `/projects/${encodeURIComponent(project.slug)}`;
 }
 
-function popupContent(place) {
+function popupContent(place, getProjectHref) {
   const popup = document.createElement('div');
   popup.className = 'project-map__popup';
   const title = document.createElement('strong');
@@ -40,7 +40,7 @@ function popupContent(place) {
   const list = document.createElement('ul');
   for (const project of place.projects) {
     const link = document.createElement('a');
-    link.href = projectHref(project);
+    link.href = getProjectHref(project);
     link.textContent = project.title;
     const item = document.createElement('li');
     item.append(link);
@@ -57,7 +57,7 @@ function openMarker(map, marker) {
   marker.openPopup();
 }
 
-function createMarker(map, place, { showCityLabel, onSelect }) {
+function createMarker(map, place, { showCityLabel, onSelect, getProjectHref }) {
   const pin = document.createElement('button');
   pin.type = 'button';
   pin.className = 'project-map__pin-button';
@@ -70,7 +70,7 @@ function createMarker(map, place, { showCityLabel, onSelect }) {
     keyboard: false,
     icon: L.divIcon({ html: pin, className: 'project-map__pin', iconSize: [44, 44], iconAnchor: [22, 22] }),
   });
-  marker.bindPopup(() => popupContent(place), { maxWidth: 250, maxHeight: 174 });
+  marker.bindPopup(() => popupContent(place, getProjectHref), { maxWidth: 250, maxHeight: 174 });
   pin.addEventListener('click', (event) => {
     onSelect(place.id);
     openMarker(map, marker);
@@ -94,7 +94,7 @@ async function loadOutlines(map, path, options, signal) {
   if (!signal.aborted) L.geoJSON(outlines, { ...options, interactive: false }).addTo(map);
 }
 
-function PlaceMap({ places }) {
+function PlaceMap({ places, getProjectHref }) {
   const headingId = useId();
   const areaId = useId();
   const canvas = useRef(null);
@@ -150,7 +150,7 @@ function PlaceMap({ places }) {
     const showCityLabel = places.length <= 6;
 
     for (const place of places) {
-      const marker = createMarker(instance, place, { showCityLabel, onSelect: setSelectedId });
+      const marker = createMarker(instance, place, { showCityLabel, onSelect: setSelectedId, getProjectHref });
       marker.addTo(layer);
       nextMarkers.set(place.id, marker);
     }
@@ -162,7 +162,7 @@ function PlaceMap({ places }) {
       layer.remove();
       markers.current.clear();
     };
-  }, [places]);
+  }, [places, getProjectHref]);
 
   function resetView() {
     if (!map.current) return;
@@ -210,7 +210,7 @@ function PlaceMap({ places }) {
                 <span>{count} {count === 1 ? 'listing' : 'listings'}</span>
               </button>
               <ul className="project-map__projects" id={id} hidden={!expanded}>
-                {place.projects.map((project) => <li key={project.id}><a href={projectHref(project)}>{project.title}</a></li>)}
+                {place.projects.map((project) => <li key={project.id}><a href={getProjectHref(project)}>{project.title}</a></li>)}
               </ul>
             </li>
           );
@@ -220,8 +220,8 @@ function PlaceMap({ places }) {
   );
 }
 
-export default function ProjectMap({ projects }) {
+export default function ProjectMap({ projects, getProjectHref = projectHref }) {
   const places = useMemo(() => groupPlaces(projects), [projects]);
   if (!places.length) return null;
-  return <PlaceMap places={places} />;
+  return <PlaceMap places={places} getProjectHref={getProjectHref} />;
 }

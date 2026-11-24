@@ -27,6 +27,8 @@ npm run demo
 
 Open [the local demo](http://127.0.0.1:4173). It uses five example listings and its own database. The listings include a volunteer request, a monthly event, and a fictional personal profile. Create two local accounts to rehearse organizer and reviewer roles.
 
+Open [the interactive demo](http://127.0.0.1:4173/experience) to browse a populated board, try a response, or explore the garden and review queue. Demo actions stay in the current browser tab.
+
 ```sh
 npm run reviewer -- --demo reviewer@example.org
 npm test

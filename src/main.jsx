@@ -130,7 +130,7 @@ function App({ AuthPage = AccountPage, onSignOut, clerkSessionId }) {
   return (
     <>
       <Header path={path} user={user} signedIn={clerkSignedIn || Boolean(user)} onSignOut={onSignOut} />
-      {session.data?.demo && <p className="demo-notice"><span className="container">Demo preview. Listings and profiles are examples.</span></p>}
+      {session.data?.demo && <p className="demo-notice"><span className="container">Demo preview. Listings and profiles are examples. <a href="/experience">Try the interactive demo</a></span></p>}
       {path === '/garden' && sessionReady && !memberUnavailable ? page : (
         <main id="main" className="site-main">
           {session.error ? <div className="container page-panel"><LoadState state={session} /></div>
@@ -145,8 +145,9 @@ function App({ AuthPage = AccountPage, onSignOut, clerkSessionId }) {
 
 const ClerkApp = lazy(() => import('./clerk.jsx'));
 const DesignSystem = lazy(() => import('./design-system.jsx'));
+const DemoExperience = lazy(() => import('./demo/DemoExperience.jsx'));
 
-function Root() {
+function LiveRoot() {
   const config = useLoad('/auth-config');
   if (config.data?.mode === 'local') return <App />;
   if (config.data?.mode === 'clerk' && typeof config.data.publishableKey === 'string' && config.data.publishableKey) {
@@ -158,6 +159,13 @@ function Root() {
   }
   const state = config.data ? { ...config, error: 'Authentication is unavailable.' } : config;
   return <main className="container page-panel"><LoadState state={state} /></main>;
+}
+
+function Root() {
+  if (window.location.pathname.replace(/\/$/, '') === '/experience') {
+    return <Suspense fallback={<p className="loading container" role="status">Opening the demo…</p>}><DemoExperience /></Suspense>;
+  }
+  return <LiveRoot />;
 }
 
 createRoot(document.getElementById('root')).render(<StrictMode><Root /></StrictMode>);

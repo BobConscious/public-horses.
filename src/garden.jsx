@@ -244,7 +244,7 @@ function ServiceJournal({ seeds, onSave }) {
   );
 }
 
-function MemberGarden() {
+function MemberGarden({ boardHref }) {
   const api = useApi();
   const [seeds, setSeeds] = useState(null);
   const [loadError, setLoadError] = useState('');
@@ -370,7 +370,7 @@ function MemberGarden() {
         {seeds.length > 0 && <a className="garden-text-link" href="#service-journal">
           Open service journal <ArrowRight size={15} aria-hidden="true" />
         </a>}
-        <a className="garden-text-link" href="/#projects">Find a way to serve <ArrowRight size={15} aria-hidden="true" /></a>
+        <a className="garden-text-link" href={boardHref}>Find a way to serve <ArrowRight size={15} aria-hidden="true" /></a>
       </div>
       <div className="garden-layout">
         <aside className="garden-sidebar" aria-label="Garden tools">
@@ -423,9 +423,9 @@ function MemberGarden() {
   );
 }
 
-export default function Garden({ user }) {
+export default function Garden({ user, boardHref = '/#projects' }) {
   return (
-    <main className="garden-page" id="main">
+    <main className="garden-page" id="main" tabIndex={-1}>
       <header className="garden-header">
         <div>
           <h1>Your garden</h1>
@@ -433,7 +433,7 @@ export default function Garden({ user }) {
         </div>
         <span className="garden-privacy"><LockKeyhole size={15} aria-hidden="true" /> Private</span>
       </header>
-      {user ? <MemberGarden key={user.id} /> : (
+      {user ? <MemberGarden key={user.id} boardHref={boardHref} /> : (
         <GardenNotice icon={Sprout} title="Sign in to see your garden">
           <a className="garden-button garden-button--solid" href="/sign-in?next=%2Fgarden">Sign in <ArrowRight size={16} aria-hidden="true" /></a>
         </GardenNotice>
