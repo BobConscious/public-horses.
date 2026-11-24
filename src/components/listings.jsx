@@ -1,17 +1,18 @@
 import { useId, useRef } from 'react';
 import { ArrowRight, Search, X } from 'lucide-react';
-import { fields, listingTypes } from '../../shared/catalog.js';
+import { fields, listingTypes, supportKinds } from '../../shared/catalog.js';
 import { dateLabel, fieldName, kindName, listingTypeName } from '../ui.jsx';
 import './listings.css';
 
 const fieldOptions = [{ id: 'all', label: 'All fields' }, ...fields];
-export const initialListingFilters = Object.freeze({ query: '', type: 'all', field: 'all' });
+export const initialListingFilters = Object.freeze({ query: '', type: 'all', field: 'all', help: 'all' });
 
-export function filterListings(projects, { query, type, field }) {
+export function filterListings(projects, { query, type, field, help = 'all' }) {
   const terms = query.trim().toLowerCase().split(/\s+/u).filter(Boolean);
   return projects.filter((project) => {
     if (field !== 'all' && project.field !== field) return false;
     if (type !== 'all' && (project.listingType ?? 'project') !== type) return false;
+    if (help !== 'all' && !project.needs.some((need) => need.type === help)) return false;
     if (!terms.length) return true;
     const words = [
       project.title, project.profile?.name ?? project.organization, project.location,
@@ -40,11 +41,18 @@ export function ListingFilters({ filters, onChange, children }) {
           onChange={(event) => onChange({ ...filters, query: event.target.value })} placeholder="Try pantry or a city" />
         {filters.query && <button type="button" aria-label="Clear search" onClick={clearSearch}><X size={16} aria-hidden="true" /></button>}
       </div>
-      <label className="catalog-type-label">
+      <label className="catalog-select-label">
         Listing type
         <select value={filters.type} onChange={(event) => onChange({ ...filters, type: event.target.value })}>
           <option value="all">All listings</option>
           {listingTypes.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
+        </select>
+      </label>
+      <label className="catalog-select-label">
+        Ways to help
+        <select value={filters.help ?? 'all'} onChange={(event) => onChange({ ...filters, help: event.target.value })}>
+          <option value="all">All ways to help</option>
+          {supportKinds.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
         </select>
       </label>
       {children}

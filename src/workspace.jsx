@@ -120,7 +120,8 @@ function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel 
                     <Field label={`${label} request`} as="textarea" required rows={2} maxLength={360} value={current.detail}
                       onChange={(event) => setNeed(id, 'detail', event.target.value)} />
                     <Field label={`Official link for ${label.toLowerCase()}`} required type="url" placeholder="https://"
-                      value={current.url} onChange={(event) => setNeed(id, 'url', event.target.value)} />
+                      value={current.url} onChange={(event) => setNeed(id, 'url', event.target.value)}
+                      hint="People respond on this page. Use a page you manage and keep its details current." />
                   </div>
                 )}
               </div>
@@ -128,7 +129,7 @@ function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel 
           })}
         </fieldset>
         <Field label="Link that confirms the request" name="proofUrl" required type="url" placeholder="https://"
-          defaultValue={project?.proofUrl} hint="This link stays private. Use the response link here if it also confirms the request." />
+          defaultValue={project?.proofUrl} hint="This review field stays private. You can reuse the public response link if it confirms the request." />
         <ErrorNotice error={error} />
         <div className="form-actions">
           <Button type="submit" disabled={pending || image.reading}>{pending ? 'Saving…' : 'Save draft'}</Button>
@@ -242,7 +243,7 @@ export function Workspace({ user, sessionReady }) {
   return <WorkspaceProjects />;
 }
 
-function ReviewCard({ project, onDecision }) {
+function ReviewCard({ project, onDecision, onRefresh }) {
   const api = useApi();
   const preview = usePrivateListingImage(project.image);
   const canPublish = !project.image || Boolean(preview.data?.dataUrl);
@@ -250,13 +251,19 @@ function ReviewCard({ project, onDecision }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const saving = useRef(false);
+  const refreshButton = useRef(null);
+  const needsRefresh = error?.status === 409 || error?.status === 404;
   const proof = officialUrl(project.proofUrl);
   const { profile } = project;
   const website = officialUrl(profile?.websiteUrl);
 
+  useEffect(() => {
+    if (needsRefresh) refreshButton.current?.focus();
+  }, [needsRefresh]);
+
   async function decide(event) {
     event.preventDefault();
-    if (saving.current) return;
+    if (saving.current || needsRefresh) return;
     const decision = event.nativeEvent.submitter?.value;
     if (!decision || (decision === 'publish' && !canPublish)) return;
     if (decision === 'changes_requested' && !note.trim()) {
@@ -314,8 +321,9 @@ function ReviewCard({ project, onDecision }) {
         <Field label="Reviewer note" as="textarea" value={note} onChange={(event) => setNote(event.target.value)} rows={3} maxLength={500} />
         <ErrorNotice error={error} />
         <div className="form-actions">
-          <Button type="submit" value="changes_requested" variant="outline" disabled={pending}>Request changes</Button>
-          <Button type="submit" value="publish" disabled={pending || !canPublish}>Publish project</Button>
+          <Button type="submit" value="changes_requested" variant="outline" disabled={pending || needsRefresh}>Request changes</Button>
+          <Button type="submit" value="publish" disabled={pending || needsRefresh || !canPublish}>Publish project</Button>
+          {needsRefresh && <Button ref={refreshButton} variant="outline" onClick={onRefresh}>Refresh review queue</Button>}
         </div>
       </form>
     </article>
@@ -325,13 +333,22 @@ function ReviewCard({ project, onDecision }) {
 function ReviewQueue() {
   const list = useLoad('/review');
   const [message, setMessage] = useState('');
+  const heading = useRef(null);
+
+  function refresh() {
+    heading.current?.focus();
+    setMessage('');
+    list.reload();
+  }
+
   return (
     <div className="workspace-page container">
-      <div className="workspace-title"><div><h1>Review projects</h1><p>Before you publish, confirm who made the request and where people can help.</p></div></div>
+      <div className="workspace-title"><div><h1 ref={heading} tabIndex={-1}>Review projects</h1><p>Before you publish, confirm who made the request and where people can help.</p></div></div>
       {message && <Notice>{message}</Notice>}
       {!list.data ? <LoadState state={list} /> : list.data.projects.length ? (
         <div className="record-list">
           {list.data.projects.map((project) => <ReviewCard key={`${project.id}/${project.version}`} project={project}
+            onRefresh={refresh}
             onDecision={(decision) => { setMessage(decision === 'publish' ? 'Project published.' : 'Change request saved.'); list.reload(); }} />)}
         </div>
       ) : <div className="empty-state"><ShieldCheck size={30} strokeWidth={1.6} aria-hidden="true" /><h2>No projects to review</h2></div>}

@@ -8,6 +8,12 @@ import { filterListings, initialListingFilters, ListingFilters, ProjectCards, Pr
 import { Deadline, EmptyProjects, ErrorNotice, LoadState, fieldName, kindName, listingTypeName, officialUrl, useLoad } from './ui.jsx';
 
 const ProjectMap = lazy(() => import('./components/project-map.jsx'));
+const responseLabels = {
+  time: 'Offer time',
+  skills: 'Offer skills',
+  funding: 'Give funds',
+  supplies: 'Offer supplies',
+};
 
 class MapBoundary extends Component {
   state = { failed: false };
@@ -60,7 +66,7 @@ export function HomePage() {
     .map(({ mapLocation }) => [mapLocation.id, mapLocation.label])).entries()]
     .sort((left, right) => left[1].localeCompare(right[1]));
   const selectedCity = cities.some(([id]) => id === city) ? city : '';
-  const filtered = Boolean(selectedCity || filters.query.trim() || filters.field !== 'all' || filters.type !== 'all');
+  const filtered = Boolean(selectedCity || filters.query.trim() || filters.field !== 'all' || filters.type !== 'all' || filters.help !== 'all');
   const matches = filterListings(projects, filters).filter(({ mapLocation }) => !selectedCity || mapLocation?.id === selectedCity);
 
   useEffect(() => {
@@ -210,7 +216,10 @@ function SupportForm({ project, user }) {
         <CircleCheck size={32} aria-hidden="true" />
         <h2>Help recorded</h2>
         <p>You earned a seed for your private garden.</p>
-        <Button href="/garden">Open my garden</Button>
+        <div className="form-actions">
+          <Button href="/garden#service-journal">Open service journal</Button>
+          <Button href="/#projects" variant="outline">Find another way to serve</Button>
+        </div>
       </div>
     );
   }
@@ -267,8 +276,13 @@ export function ProjectPage({ slug, user, sessionReady }) {
             {project.schedule && <p className="project-schedule">{project.schedule}</p>}
             <p>{project.summary}</p>
             {project.demo && <p className="project-example">Preview listing. Organizer action links are disabled.</p>}
-            {!project.open && <Notice>{project.fulfilledAt
-              ? 'The organizer marked this request fulfilled.' : 'This request is closed.'}</Notice>}
+            {!project.open && (
+              <div className="closed-opportunity">
+                <Notice>{project.fulfilledAt
+                  ? 'The organizer marked this request fulfilled.' : 'This request is closed.'}</Notice>
+                <Button href="/#projects" variant="outline">Find another way to serve</Button>
+              </div>
+            )}
           </section>
 
           <div className="project-body">
@@ -282,14 +296,17 @@ export function ProjectPage({ slug, user, sessionReady }) {
                 <ul className="need-list">
                   {project.needs.map((need) => {
                     const url = project.open && !project.demo ? officialUrl(need.url) : null;
-                    const availabilityHint = need.type === 'time' ? 'time-response-hint' : undefined;
+                    const hostId = `${need.type}-response-host`;
+                    const availabilityHint = need.type === 'time' ? 'time-response-hint' : '';
+                    const descriptionIds = availabilityHint ? `${hostId} ${availabilityHint}` : hostId;
                     return (
                       <li key={need.type}>
                         <div><h3>{kindName(need.type)}</h3><p>{need.detail}</p></div>
                         {url && <div className="need-action">
-                          <Button href={url} target="_blank" rel="noopener noreferrer" aria-describedby={availabilityHint}>
-                            Respond to organizer <ArrowUpRight size={17} aria-hidden="true" />
+                          <Button href={url} target="_blank" rel="noopener noreferrer" aria-describedby={descriptionIds}>
+                            {responseLabels[need.type] ?? 'Respond to organizer'} <ArrowUpRight size={17} aria-hidden="true" />
                           </Button>
+                          <p id={hostId}>Opens {new URL(url).host}</p>
                           {availabilityHint && <p id={availabilityHint}>Check current availability on the organizer’s page.</p>}
                         </div>}
                       </li>

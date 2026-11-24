@@ -224,9 +224,14 @@ function JournalEntry({ seed, onSave }) {
 }
 
 function ServiceJournal({ seeds, onSave }) {
-  if (!seeds.length) return null;
+  const journal = useRef(null);
+
+  useEffect(() => {
+    if (window.location.hash === '#service-journal') journal.current?.focus();
+  }, []);
+
   return (
-    <section id="service-journal" tabIndex={-1} className="garden-journal" aria-labelledby="garden-journal-title">
+    <section ref={journal} id="service-journal" tabIndex={-1} className="garden-journal" aria-labelledby="garden-journal-title">
       <div className="garden-panel__heading">
         <span className="garden-panel__icon"><BookOpen size={18} aria-hidden="true" /></span>
         <h2 id="garden-journal-title">Service journal</h2>
@@ -413,7 +418,7 @@ function MemberGarden() {
           </div>
         </section>
       </div>
-      <ServiceJournal seeds={seeds} onSave={saveObservation} />
+      {seeds.length > 0 && <ServiceJournal seeds={seeds} onSave={saveObservation} />}
     </>
   );
 }
