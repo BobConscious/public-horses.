@@ -1,0 +1,835 @@
+{
+  "version": "1.0",
+  "mode": "private-synthetic",
+  "baselineCommit": "6a81c9d83aee9cce15cc3d9974441d2310dc4879",
+  "fixtureOrigin": "https://avatars.example.test",
+  "clocks": {
+    "start": "2027-01-08T15:00:00.000Z",
+    "afterShift": "2027-01-09T17:00:00.000Z",
+    "nextDay": "2027-01-10T15:00:00.000Z"
+  },
+  "devices": {
+    "phoneKeyboard": {
+      "width": 390,
+      "input": "keyboard"
+    },
+    "phoneTouch": {
+      "width": 390,
+      "input": "touch"
+    },
+    "desktop": {
+      "width": 1440,
+      "input": "mouse and keyboard"
+    }
+  },
+  "avatars": [
+    {
+      "id": "nia",
+      "name": "Nia Brooks",
+      "profile": "First-time local volunteer",
+      "anchor": "nia-brooks",
+      "device": "phoneKeyboard",
+      "brief": "You are new to the board. You have 90 minutes on Saturday morning in York. Look for one clear task that fits. If the shift is full and no other shift fits, leave without sending an offer."
+    },
+    {
+      "id": "val",
+      "name": "Val Soto",
+      "profile": "Remote skills volunteer",
+      "anchor": "val-soto",
+      "device": "desktop",
+      "brief": "You edit bilingual handouts. You have 45 minutes and need remote work. You want a named result and a clear delivery method. Offer help when you can work with sample materials."
+    },
+    {
+      "id": "robin",
+      "name": "Robin Cho",
+      "profile": "Direct giver",
+      "anchor": "robin-cho",
+      "device": "phoneTouch",
+      "brief": "You cannot attend a shift. You can give up to $25 or offer four reusable grocery bags. Check who will receive the gift and what it will provide. You expect to give through the organizer."
+    },
+    {
+      "id": "ari",
+      "name": "Ari Moss",
+      "profile": "Returning helper",
+      "anchor": "ari-moss",
+      "device": "phoneKeyboard",
+      "brief": "You already helped with a pantry shift. You want to make service a regular practice. You want a private place for your intention and observations. Look for another act when you have time."
+    },
+    {
+      "id": "jamie",
+      "name": "Jamie Vale",
+      "profile": "Individual organizer",
+      "anchor": "jamie-vale",
+      "device": "desktop",
+      "brief": "You are a neighbor with one small request. You have a page that explains the request and no organization website. You can act on review feedback. You also help on tasks other people post."
+    },
+    {
+      "id": "devon",
+      "name": "Devon Reed",
+      "profile": "Organization coordinator",
+      "anchor": "devon-reed",
+      "device": "desktop",
+      "brief": "You schedule the crew for Sample Maple Pantry. You have one open place on this shift. You manage the response page. You confirm a result after the crew finishes the work."
+    },
+    {
+      "id": "casey",
+      "name": "Casey Lin",
+      "profile": "Listing reviewer",
+      "anchor": "casey-lin",
+      "device": "desktop",
+      "brief": "You review submitted requests. Check the organizer, task, dates, result, and response links. Leave specific feedback when something needs to change. Review only the version you can verify."
+    },
+    {
+      "id": "tess",
+      "name": "Tess Ward",
+      "profile": "Referral partner",
+      "anchor": "tess-ward",
+      "device": "desktop",
+      "brief": "You run a community meditation group. You want to give participants one current way to serve after a session. Check the task and the next step before you share a link."
+    }
+  ],
+  "fixtures": {
+    "accounts": {
+      "robin": {
+        "email": "robin@example.test",
+        "reviewer": false
+      },
+      "ari": {
+        "email": "ari@example.test",
+        "reviewer": false
+      },
+      "jamie": {
+        "email": "jamie@example.test",
+        "reviewer": false
+      },
+      "devon": {
+        "email": "devon@example.test",
+        "reviewer": false
+      },
+      "casey": {
+        "email": "casey@example.test",
+        "reviewer": true
+      }
+    },
+    "profiles": {
+      "pantry": {
+        "account": "devon",
+        "input": {
+          "kind": "organization",
+          "name": "Sample Maple Pantry",
+          "location": "York, PA",
+          "bio": "A fictional pantry crew that packs grocery bags.",
+          "websiteUrl": "https://avatars.example.test/maple"
+        }
+      },
+      "neighbor": {
+        "account": "jamie",
+        "input": {
+          "kind": "person",
+          "name": "Jamie Vale",
+          "location": "York, PA",
+          "bio": "I help neighbors make pickup instructions easy to read."
+        }
+      },
+      "reviewer-person": {
+        "account": "casey",
+        "input": {
+          "kind": "person",
+          "name": "Casey Lin",
+          "location": "Online",
+          "bio": "I help check sample instructions."
+        }
+      }
+    },
+    "listings": {
+      "pantry-shift": {
+        "profile": "pantry",
+        "input": {
+          "title": "Pack Saturday food bags",
+          "listingType": "volunteer",
+          "field": "nourishment",
+          "location": "Sample Maple Pantry, York, PA",
+          "placeId": "ne-1159133615",
+          "schedule": "January 9, 10 to 11:30 a.m. ET. Allow 90 minutes.",
+          "endsAt": "2027-01-09",
+          "summary": "Pack food bags for the Saturday pickup.",
+          "story": "Meet at the sample pantry check-in. Pack and label 12 grocery bags.",
+          "completion": "Pack and label 12 food bags.",
+          "proofUrl": "https://avatars.example.test/maple/shift-proof",
+          "needs": [
+            {
+              "type": "time",
+              "detail": "Join one 90-minute packing shift.",
+              "url": "https://avatars.example.test/maple/shift"
+            },
+            {
+              "type": "supplies",
+              "detail": "Offer clean reusable grocery bags.",
+              "url": "https://avatars.example.test/maple/bags"
+            }
+          ]
+        }
+      },
+      "pantry-next-shift": {
+        "profile": "pantry",
+        "input": {
+          "title": "Pack food bags for the next pickup",
+          "listingType": "volunteer",
+          "field": "nourishment",
+          "location": "Sample Maple Pantry, York, PA",
+          "placeId": "ne-1159133615",
+          "schedule": "January 16, 10 to 11:30 a.m. ET. Allow 90 minutes.",
+          "endsAt": "2027-01-16",
+          "summary": "Help with the next pantry pickup.",
+          "story": "Meet at the sample pantry check-in. Pack and label eight grocery bags.",
+          "completion": "Pack and label eight food bags.",
+          "proofUrl": "https://avatars.example.test/maple/next-proof",
+          "needs": [
+            {
+              "type": "time",
+              "detail": "Join the January 16 packing shift.",
+              "url": "https://avatars.example.test/maple/next"
+            }
+          ]
+        }
+      },
+      "supply-drive": {
+        "profile": "pantry",
+        "input": {
+          "title": "Stock reusable pantry bags",
+          "listingType": "project",
+          "field": "nourishment",
+          "location": "Online",
+          "placeId": null,
+          "schedule": "Offer bags or funds by January 16, 5 p.m. ET.",
+          "endsAt": "2027-01-16",
+          "summary": "Help cover the cost of reusable grocery bags or offer bags directly.",
+          "story": "The pantry arranges delivery after a supporter offers bags. Funds cover the same supplies.",
+          "completion": "Stock 20 clean reusable grocery bags.",
+          "proofUrl": "https://avatars.example.test/maple/bag-drive-proof",
+          "needs": [
+            {
+              "type": "funding",
+              "detail": "Help cover the cost of reusable bags.",
+              "url": "https://avatars.example.test/maple/give"
+            },
+            {
+              "type": "supplies",
+              "detail": "Offer clean reusable grocery bags.",
+              "url": "https://avatars.example.test/maple/bags"
+            }
+          ]
+        }
+      },
+      "pickup-sheet": {
+        "profile": "neighbor",
+        "input": {
+          "title": "Review a bilingual pickup sheet",
+          "listingType": "project",
+          "field": "nourishment",
+          "location": "Online",
+          "placeId": null,
+          "schedule": "Allow 45 minutes. Return the draft by January 16, 5 p.m. ET.",
+          "endsAt": "2027-01-16",
+          "summary": "Review the Spanish text in a sample pantry pickup sheet.",
+          "story": "Check the Spanish text against the English sample. The sheet uses fictional names and places.",
+          "completion": "Return one marked-up sample pickup sheet.",
+          "proofUrl": "https://avatars.example.test/jamie/request-proof",
+          "needs": [
+            {
+              "type": "skills",
+              "detail": "Check the Spanish text and mark any changes.",
+              "url": "https://avatars.example.test/jamie/review"
+            }
+          ]
+        }
+      },
+      "reviewer-request": {
+        "profile": "reviewer-person",
+        "input": {
+          "title": "Check two sample pickup signs",
+          "listingType": "project",
+          "field": "nourishment",
+          "location": "Online",
+          "placeId": null,
+          "endsAt": "2027-01-16",
+          "summary": "Check that two sample pickup signs are easy to read.",
+          "story": "Use the two fictional signs supplied by the organizer.",
+          "completion": "Return one comment on each sign.",
+          "proofUrl": "https://avatars.example.test/casey/sign-proof",
+          "needs": [
+            {
+              "type": "skills",
+              "detail": "Check two sample signs for clear instructions.",
+              "url": "https://avatars.example.test/casey/signs"
+            }
+          ]
+        }
+      }
+    },
+    "pages": {
+      "pantry-profile": {
+        "url": "https://avatars.example.test/maple",
+        "defaultMode": "profile",
+        "modes": {
+          "profile": {
+            "heading": "Sample Maple Pantry",
+            "text": "The sample pantry packs grocery bags for community pickup."
+          }
+        }
+      },
+      "shift-proof": {
+        "url": "https://avatars.example.test/maple/shift-proof",
+        "defaultMode": "proof",
+        "modes": {
+          "proof": {
+            "heading": "Sample Maple Pantry confirms the shift",
+            "text": "Pack and label 12 food bags in York on January 9. The shift begins at 10 a.m. ET and takes 90 minutes."
+          }
+        }
+      },
+      "next-proof": {
+        "url": "https://avatars.example.test/maple/next-proof",
+        "defaultMode": "proof",
+        "modes": {
+          "proof": {
+            "heading": "Sample Maple Pantry confirms the next shift",
+            "text": "Pack and label eight food bags in York on January 16. The shift begins at 10 a.m. ET and takes 90 minutes."
+          }
+        }
+      },
+      "drive-proof": {
+        "url": "https://avatars.example.test/maple/bag-drive-proof",
+        "defaultMode": "proof",
+        "modes": {
+          "proof": {
+            "heading": "Sample Maple Pantry confirms the bag drive",
+            "text": "The pantry needs 20 clean reusable grocery bags by January 16."
+          }
+        }
+      },
+      "sheet-proof": {
+        "url": "https://avatars.example.test/jamie/request-proof",
+        "defaultMode": "proof",
+        "modes": {
+          "proof": {
+            "heading": "Jamie Vale confirms the pickup sheet",
+            "text": "Check the Spanish text in the sample sheet and return one marked-up draft by January 16."
+          }
+        }
+      },
+      "sign-proof": {
+        "url": "https://avatars.example.test/casey/sign-proof",
+        "defaultMode": "proof",
+        "modes": {
+          "proof": {
+            "heading": "Casey Lin confirms the sign request",
+            "text": "Check two sample signs and return one comment on each."
+          }
+        }
+      },
+      "shift-time": {
+        "url": "https://avatars.example.test/maple/shift",
+        "defaultMode": "open",
+        "modes": {
+          "open": {
+            "heading": "One place on the January 9 shift",
+            "text": "Check in at the sample pantry in York at 10 a.m. ET. Allow 90 minutes.",
+            "button": "Offer help",
+            "receipt": "PH-AV-SHIFT-01",
+            "nextMode": "full"
+          },
+          "full": {
+            "heading": "This request is full",
+            "text": "The sample pantry has enough people for this shift."
+          }
+        }
+      },
+      "next-time": {
+        "url": "https://avatars.example.test/maple/next",
+        "defaultMode": "open",
+        "modes": {
+          "open": {
+            "heading": "One place on the January 16 shift",
+            "text": "Check in at the sample pantry in York at 10 a.m. ET. Allow 90 minutes.",
+            "button": "Offer help",
+            "receipt": "PH-AV-NEXT-01",
+            "nextMode": "full"
+          },
+          "full": {
+            "heading": "This request is full",
+            "text": "The sample pantry has enough people for this shift."
+          }
+        }
+      },
+      "bags": {
+        "url": "https://avatars.example.test/maple/bags",
+        "defaultMode": "ready",
+        "modes": {
+          "ready": {
+            "heading": "Offer reusable grocery bags",
+            "text": "The pantry accepts clean reusable grocery bags. It arranges handoff after an offer."
+          },
+          "unavailable": {
+            "status": 503,
+            "heading": "Supply instructions are unavailable"
+          }
+        }
+      },
+      "funding": {
+        "url": "https://avatars.example.test/maple/give",
+        "defaultMode": "ready",
+        "modes": {
+          "ready": {
+            "heading": "Fund reusable bags at Sample Maple Pantry",
+            "text": "A gift helps cover the cost of clean reusable grocery bags."
+          }
+        }
+      },
+      "sheet-skills": {
+        "url": "https://avatars.example.test/jamie/review",
+        "defaultMode": "open",
+        "modes": {
+          "open": {
+            "heading": "Review the sample pickup sheet",
+            "text": "Mark changes on the sample sheet. Return it by January 16. Use only the fictional sample.",
+            "button": "Offer to review",
+            "receipt": "PH-AV-SKILL-01",
+            "nextMode": "full"
+          },
+          "full": {
+            "heading": "The review request is full"
+          },
+          "unclear": {
+            "heading": "Pickup sheet request",
+            "text": "The organizer will send the materials and delivery steps later."
+          }
+        }
+      },
+      "sign-skills": {
+        "url": "https://avatars.example.test/casey/signs",
+        "defaultMode": "ready",
+        "modes": {
+          "ready": {
+            "heading": "Review two sample signs",
+            "text": "Return one comment per sign."
+          }
+        }
+      },
+      "after-session": {
+        "url": "https://avatars.example.test/partner/after-session",
+        "defaultMode": "direct",
+        "modes": {
+          "direct": {
+            "heading": "One way to serve after the session",
+            "linkLabel": "See the pantry shift",
+            "link": "/projects/{pantry-shift}"
+          },
+          "board": {
+            "heading": "Find another way to serve",
+            "linkLabel": "Open the service board",
+            "link": "/#projects"
+          }
+        }
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "VOL-01",
+      "avatar": "nia",
+      "kind": "normal",
+      "entry": "/",
+      "setup": {
+        "clock": "start",
+        "session": "guest",
+        "listings": {
+          "pantry-shift": "published",
+          "supply-drive": "published"
+        }
+      },
+      "task": "You have 90 minutes in York on Saturday, January 9. Find a food service task you can do and offer to help.",
+      "operator": [
+        "Use the phone keyboard setting. Start the controlled shift page in open mode."
+      ],
+      "checks": [
+        "Nia reaches the correct listing and its Time response with the keyboard.",
+        "The listing gives the place, time, duration, and expected result. The Time response shows the availability hint.",
+        "The organizer page returns one test receipt. The board does not require sign-in for the handoff."
+      ]
+    },
+    {
+      "id": "VOL-02",
+      "avatar": "nia",
+      "kind": "exception",
+      "entry": "/projects/{pantry-shift}",
+      "setup": {
+        "clock": "start",
+        "session": "guest",
+        "listings": {
+          "pantry-shift": "published",
+          "pantry-next-shift": "published"
+        },
+        "pageModes": {
+          "shift-time": "full"
+        }
+      },
+      "task": "Check the January 9 shift you saved. If it does not fit or has no room, look for another shift you can do that morning.",
+      "operator": [
+        "Start the shift page in full mode. Leave the current Public Horses listing published."
+      ],
+      "checks": [
+        "The controlled page shows that the shift is full and creates no new receipt.",
+        "The original request is still visible on the board and has no fulfillment date.",
+        "Nia can return to the board, identify that the next shift is on a different date, and stop without recording service."
+      ]
+    },
+    {
+      "id": "SKILL-01",
+      "avatar": "val",
+      "kind": "normal",
+      "entry": "/?view=map#projects",
+      "setup": {
+        "clock": "start",
+        "session": "guest",
+        "listings": {
+          "pickup-sheet": "published",
+          "pantry-shift": "published"
+        }
+      },
+      "task": "Find one remote task that uses your bilingual editing skills. You have 45 minutes and can work with a sample sheet.",
+      "operator": [
+        "Show all cities. Start the controlled skills page in open mode."
+      ],
+      "checks": [
+        "Val finds the online request under Listings without pins.",
+        "Val finds the expected result and reaches the organizer through the Skills response.",
+        "The Skills response has no Time availability hint. The controlled page returns one skills receipt."
+      ]
+    },
+    {
+      "id": "SKILL-02",
+      "avatar": "val",
+      "kind": "exception",
+      "entry": "/projects/{pickup-sheet}",
+      "setup": {
+        "clock": "start",
+        "session": "guest",
+        "listings": {
+          "pickup-sheet": "published"
+        },
+        "pageModes": {
+          "sheet-skills": "unclear"
+        }
+      },
+      "task": "Decide if you can take this review with sample materials. You need clear instructions for what to send back.",
+      "operator": [
+        "Use the unclear skills page. Give it no offer button or upload form."
+      ],
+      "checks": [
+        "Val reaches the Skills destination and identifies which instructions are missing.",
+        "Val stops without making a commitment or sharing a file. The runner captures the reason."
+      ]
+    },
+    {
+      "id": "GIVE-01",
+      "avatar": "robin",
+      "kind": "normal",
+      "entry": "/#projects",
+      "setup": {
+        "clock": "start",
+        "session": "guest",
+        "listings": {
+          "supply-drive": "published"
+        }
+      },
+      "task": "You can spend up to $25 on bags. Check who needs them and find where you would give.",
+      "operator": [
+        "Serve the controlled funding page with no checkout."
+      ],
+      "checks": [
+        "Robin identifies Sample Maple Pantry and the purpose of the gift.",
+        "The Funding response opens the pantry’s funding page without Public Horses sign-in.",
+        "No payment is made. The Funding response has no Time availability hint."
+      ]
+    },
+    {
+      "id": "GIVE-02",
+      "avatar": "robin",
+      "kind": "exception",
+      "entry": "/projects/{supply-drive}",
+      "setup": {
+        "clock": "start",
+        "session": "guest",
+        "listings": {
+          "supply-drive": "published"
+        },
+        "pageModes": {
+          "bags": "unavailable"
+        }
+      },
+      "task": "You have four reusable grocery bags. Find how to offer them and decide what to do if the instructions are unavailable.",
+      "operator": [
+        "Return HTTP 503 on the controlled Supplies page. Keep the Funding page available."
+      ],
+      "checks": [
+        "The Supplies response leads to the supplies destination. It does not send Robin to funding.",
+        "Robin can return to the listing after the outside error. No payment or handoff is recorded.",
+        "Neither the Funding nor Supplies response shows the Time availability hint."
+      ]
+    },
+    {
+      "id": "GARDEN-01",
+      "avatar": "ari",
+      "kind": "normal",
+      "entry": "/garden",
+      "setup": {
+        "clock": "nextDay",
+        "session": "ari",
+        "listings": {
+          "pantry-shift": "fulfilled",
+          "pantry-next-shift": "published"
+        }
+      },
+      "task": "You packed and labeled 12 bags yesterday. Your garden is empty. Use your saved service link to record the work, then return later to add an observation. Look for another way to help.",
+      "operator": [
+        "Give Ari the saved link to the fulfilled shift. Start with no service records.",
+        "Reload or revisit the garden before the later observation."
+      ],
+      "checks": [
+        "The empty garden has one board link. The fulfilled listing offers past service recording and hides the response action.",
+        "One saved act creates one seed with the chosen intention and original note.",
+        "The observation saves separately. The journal link comes first when the seed exists.",
+        "Ari reaches the board from the seeded garden by keyboard and finds the next shift."
+      ]
+    },
+    {
+      "id": "GARDEN-02",
+      "avatar": "ari",
+      "kind": "exception",
+      "entry": "/garden",
+      "setup": {
+        "clock": "nextDay",
+        "session": "ari",
+        "otherAccounts": [
+          "robin"
+        ],
+        "listings": {
+          "pantry-shift": "fulfilled"
+        },
+        "savedAct": {
+          "account": "ari",
+          "listing": "pantry-shift",
+          "type": "time",
+          "intention": "nourishment",
+          "requestId": "avatar-ari-act-01",
+          "note": "I packed and labeled 12 food bags.",
+          "observation": "Clear labels made the pickup easier."
+        }
+      },
+      "task": "Check your saved note and later observation. You are on a shared device. Sign out before handing it to the next person.",
+      "operator": [
+        "Replay the original save once with the same ID and input. Use that record for the privacy check.",
+        "After Ari signs out, open the garden as Robin in a separate session. Read back Ari’s entry after Ari signs in again."
+      ],
+      "checks": [
+        "The replay returns the same seed and Ari has one entry.",
+        "The signed-out view and Robin’s garden show neither Ari’s note nor observation.",
+        "Ari’s own account still shows the original note and later observation."
+      ]
+    },
+    {
+      "id": "PERSON-01",
+      "avatar": "jamie",
+      "kind": "normal",
+      "entry": "/workspace",
+      "setup": {
+        "clock": "start",
+        "session": "jamie",
+        "listings": {
+          "pickup-sheet": "uncreated"
+        }
+      },
+      "task": "Ask for help reviewing your bilingual pickup sheet. Use your own name and give the reviewer a page that confirms the task.",
+      "operator": [
+        "Give Jamie the request card values from the pickup-sheet fixture. Start with no profile or draft.",
+        "Have Casey approve the submitted version from a separate account after checking both destinations."
+      ],
+      "checks": [
+        "Jamie creates a person profile with no website and saves a draft with a private HTTPS source.",
+        "The draft is absent from public discovery before approval. The released listing shows the approved person profile and Skills response.",
+        "The public listing does not expose the private proof field."
+      ]
+    },
+    {
+      "id": "PERSON-02",
+      "avatar": "jamie",
+      "kind": "exception",
+      "entry": "/workspace",
+      "setup": {
+        "clock": "nextDay",
+        "session": "jamie",
+        "listings": {
+          "pickup-sheet": "published",
+          "pantry-shift": "fulfilled"
+        }
+      },
+      "task": "The pickup sheet task was withdrawn before anyone completed it. Close it. Use the same account to record the food packing you did on January 9.",
+      "operator": [
+        "Give Jamie the saved link to the separate fulfilled pantry shift after closure."
+      ],
+      "checks": [
+        "The withdrawn request leaves the board. Its direct page has no response and no fulfillment date.",
+        "Jamie can record past service on the pantry request with the same member account.",
+        "The journal entry refers to the pantry shift and does not mark Jamie’s own request fulfilled."
+      ]
+    },
+    {
+      "id": "ORG-01",
+      "avatar": "devon",
+      "kind": "normal",
+      "entry": "/workspace",
+      "setup": {
+        "clock": "start",
+        "session": "devon",
+        "listings": {
+          "pantry-shift": "uncreated"
+        }
+      },
+      "task": "Post the January 9 pantry shift so one volunteer can help. Give the reviewer enough information to confirm it.",
+      "operator": [
+        "Give Devon the pantry request card values. Start with no profile or draft.",
+        "Have Casey review the exact submitted version and approve it from a separate account."
+      ],
+      "checks": [
+        "Devon creates an organization profile and enters the date, start time, time zone, and duration.",
+        "The submission includes the task, completion result, city, response links, and private proof. The reviewer can read them.",
+        "The approved listing uses the organization profile. Only the live Time response shows the availability hint."
+      ]
+    },
+    {
+      "id": "ORG-02",
+      "avatar": "devon",
+      "kind": "exception",
+      "entry": "/workspace",
+      "setup": {
+        "clock": "start",
+        "session": "devon",
+        "listings": {
+          "pantry-shift": "published"
+        },
+        "pageModes": {
+          "shift-time": "full"
+        }
+      },
+      "task": "The one shift place is filled and the work is pending. Decide what to do with the listing. Update it once your crew confirms the bags are packed and labeled.",
+      "operator": [
+        "Keep the response page full. Capture its state before sending any simulated confirmation.",
+        "Advance to afterShift. Tell Devon the crew packed and labeled all 12 bags."
+      ],
+      "checks": [
+        "The full shift stays published until the simulated confirmation. It has no fulfillment date during the wait.",
+        "Devon marks it fulfilled after confirmation. It leaves discovery and the direct page hides its response links.",
+        "The direct page shows fulfillment and offers past service recording."
+      ]
+    },
+    {
+      "id": "REVIEW-01",
+      "avatar": "casey",
+      "kind": "normal",
+      "entry": "/review",
+      "setup": {
+        "clock": "start",
+        "session": "casey",
+        "listings": {
+          "pickup-sheet": "submitted"
+        },
+        "overrides": {
+          "pickup-sheet": {
+            "completion": ""
+          }
+        }
+      },
+      "task": "Review Jamie’s request. Check the source and response route. Ask for anything you need before you can publish it.",
+      "operator": [
+        "After Casey requests a correction, have Jamie add the saved fixture completion and resubmit.",
+        "Have Casey inspect the new submission before deciding whether to publish."
+      ],
+      "checks": [
+        "Casey opens the proof and response pages and requests a specific completion result.",
+        "The returned request stays off the board. Casey can publish after reviewing the corrected version.",
+        "The public listing shows the corrected completion result and withholds the private review source."
+      ]
+    },
+    {
+      "id": "REVIEW-02",
+      "avatar": "casey",
+      "kind": "exception",
+      "entry": "/review",
+      "setup": {
+        "clock": "start",
+        "session": "casey",
+        "listings": {
+          "pickup-sheet": "submitted",
+          "reviewer-request": "submitted"
+        }
+      },
+      "task": "Check the queue while another organizer revises a request. Work out which submission you can review.",
+      "operator": [
+        "Keep the first pickup-sheet submission open in one tab. Use another review tab to send it back.",
+        "Have Jamie edit and resubmit. Try publishing from the first tab before refreshing."
+      ],
+      "checks": [
+        "Casey’s own submitted request is absent from Casey’s review queue.",
+        "The old review receives a version conflict. The current version stays under review and off the board.",
+        "After refresh, Casey sees the current version."
+      ]
+    },
+    {
+      "id": "REF-01",
+      "avatar": "tess",
+      "kind": "normal",
+      "entry": "https://avatars.example.test/partner/after-session",
+      "setup": {
+        "clock": "start",
+        "session": "guest",
+        "listings": {
+          "pantry-shift": "published"
+        }
+      },
+      "task": "Check the service link on your group’s sample page. Decide if a person leaving the session can use it today.",
+      "operator": [
+        "Use the partner page in direct mode. Open the link in a fresh guest session.",
+        "Open the controlled Time page to verify room. Stop before sending an offer."
+      ],
+      "checks": [
+        "The partner link opens the reviewed listing. A signed-out person can find the task, time, place, and live response.",
+        "Tess verifies the organizer’s page has room. No receipt or completed service is counted."
+      ]
+    },
+    {
+      "id": "REF-02",
+      "avatar": "tess",
+      "kind": "exception",
+      "entry": "https://avatars.example.test/partner/after-session",
+      "setup": {
+        "clock": "nextDay",
+        "session": "guest",
+        "listings": {
+          "pantry-shift": "expired",
+          "pantry-next-shift": "published"
+        }
+      },
+      "task": "The link you used after the session points to a past shift. Find a current path for people who still want to help.",
+      "operator": [
+        "Start the partner page in direct mode. Switch it to board mode when Tess chooses the fallback.",
+        "Reopen the partner page as a guest and follow the new link."
+      ],
+      "checks": [
+        "The expired listing has no response action and no fulfillment date.",
+        "The new link reaches the board and the January 16 request can be found.",
+        "The runner shares no contact details, sends no outreach, and counts no real service."
+      ]
+    }
+  ]
+}

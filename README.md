@@ -10,6 +10,8 @@ Use the [pilot acceptance plan](docs/pilot-acceptance.md) to test the service pa
 
 Use the [pilot plan v1.1](docs/plans/service-board-learning-v1.1.md) and [private request card](docs/operations/pilot-request-card-v1.0.md) for the next test. The [research](docs/research/service-platform-benchmark-v1.0.md) and [team debate](docs/decisions/service-board-pilot-debate-v1.0.md) give the basis for the plan.
 
+Use the [synthetic user avatars](docs/testing/synthetic-user-avatars-v1.0.md) to prepare fictional users and test the service journey.
+
 ## Brand and UI
 
 Read the [brand kit](docs/brand-kit.md) and [UI library guide](docs/ui-library.md). Open `/design-system` to use the live examples and download the logo files and CSS tokens.
