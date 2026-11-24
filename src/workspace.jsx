@@ -100,7 +100,7 @@ function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel 
           <Field label="Location" required name="location" maxLength={96} defaultValue={project?.location}
             hint="Enter the public location or write Online." />
           <Field label="Schedule" optional name="schedule" maxLength={200} defaultValue={project?.schedule}
-            placeholder="For example, Saturdays at 10 a.m. ET" />
+            hint="Give the date, start time, time zone, and time needed." />
         </div>
         <PlacePicker value={place} onChange={setPlace} disabled={pending} />
         <Field label="Short summary" as="textarea" required name="summary" rows={2} maxLength={200} defaultValue={project?.summary} />
@@ -128,7 +128,7 @@ function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel 
           })}
         </fieldset>
         <Field label="Link that confirms the request" name="proofUrl" required type="url" placeholder="https://"
-          defaultValue={project?.proofUrl} hint="Use a page from the organizer. This link stays off the public project page." />
+          defaultValue={project?.proofUrl} hint="This link stays private. Use the response link here if it also confirms the request." />
         <ErrorNotice error={error} />
         <div className="form-actions">
           <Button type="submit" disabled={pending || image.reading}>{pending ? 'Saving…' : 'Save draft'}</Button>

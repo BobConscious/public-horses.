@@ -8,7 +8,7 @@ Read the [mission and participant journey](docs/mission.md) for the project’s 
 
 Use the [pilot acceptance plan](docs/pilot-acceptance.md) to test the service path. Use the [pilot hosting guide](docs/pilot-hosting.md) to test sign-in, durable storage, and recovery.
 
-See the [service platform research](docs/research/service-platform-benchmark-v1.0.md) and [pilot plan v1.0](docs/plans/service-board-learning-v1.0.md) for the next test.
+Use the [pilot plan v1.1](docs/plans/service-board-learning-v1.1.md) and [private request card](docs/operations/pilot-request-card-v1.0.md) for the next test. The [research](docs/research/service-platform-benchmark-v1.0.md) and [team debate](docs/decisions/service-board-pilot-debate-v1.0.md) give the basis for the plan.
 
 ## Brand and UI
 

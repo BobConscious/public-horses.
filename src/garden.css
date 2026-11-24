@@ -472,7 +472,7 @@
   scroll-margin-top: 12px;
 }
 
-.garden-journal-link { margin-bottom: .75rem; }
+.garden-actions { display: flex; flex-wrap: wrap; gap: 0 1rem; margin-bottom: .75rem; }
 
 .garden-journal__entries {
   display: grid;

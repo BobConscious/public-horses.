@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdtempSync, rmSync, rmdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -6,6 +7,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 import { randomUUID } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { createApp } from '../server/index.js';
 import { seedDemo } from '../server/demo.js';
@@ -373,6 +375,56 @@ test('a file-backed store retains fixtures across restarts', () => {
   } finally {
     for (const name of ['marketplace.sqlite', 'marketplace.sqlite-wal', 'marketplace.sqlite-shm']) {
       rmSync(join(folder, name), { force: true });
+    }
+    rmdirSync(folder);
+  }
+});
+
+test('backup and restore keep a fulfilled request and private service records', () => {
+  const folder = mkdtempSync(join(tmpdir(), 'public-horses-backup-'));
+  const database = join(folder, 'marketplace.sqlite');
+  const snapshot = join(folder, 'snapshot.sqlite');
+  const restoredFile = join(folder, 'restored.sqlite');
+  const backupScript = fileURLToPath(new URL('../scripts/backup-database.mjs', import.meta.url));
+  const fulfilledAt = '2027-01-07T12:00:00.000Z';
+  const clock = () => Date.parse(fulfilledAt);
+  const completion = 'Sort and label one cart of donations.';
+  const note = 'I sorted one cart.';
+  const reflection = 'The labels helped the next crew.';
+  let source, restored;
+  try {
+    source = createStore(database, { clock });
+    const owner = source.createAccount('Organizer', 'organizer@example.org', 'disabled').id;
+    const reviewer = source.createAccount('Reviewer', 'reviewer@example.org', 'disabled').id;
+    const supporter = source.createAccount('Supporter', 'supporter@example.org', 'disabled').id;
+    const draft = source.createProject(owner, { ...request, completion });
+    const submitted = source.submitProject(owner, draft.id, draft.version);
+    const published = source.reviewProject(reviewer, draft.id, { version: submitted.version, decision: 'publish' });
+    const fulfilled = source.closeProject(owner, draft.id, published.version, true);
+    const seed = source.recordSupport(supporter, {
+      projectId: fulfilled.id, type: 'time', intention: 'nourishment', note, requestId: randomUUID(),
+    });
+    source.updateSeedReflection(supporter, seed.id, reflection);
+
+    execFileSync(process.execPath, [backupScript, database, snapshot], { timeout: 20_000 });
+    execFileSync(process.execPath, [backupScript, snapshot, restoredFile], { timeout: 20_000 });
+
+    restored = createStore(restoredFile, { clock });
+    const [owned] = restored.listOwned(owner);
+    assert.equal(owned.status, 'closed');
+    const project = restored.getPublic(fulfilled.slug);
+    assert.equal(project.id, fulfilled.id);
+    assert.equal(project.fulfilledAt, fulfilledAt);
+    assert.equal(project.completion, completion);
+    assert.equal(project.open, false);
+    assert.deepEqual(project.needs, request.needs.map((need) => ({ ...need, url: null })));
+    assert.deepEqual(restored.listSeeds(supporter), [{ ...seed, note, reflection }]);
+    assert.deepEqual(restored.listSeeds(reviewer), []);
+  } finally {
+    restored?.close();
+    source?.close();
+    for (const path of [database, snapshot, restoredFile]) {
+      for (const suffix of ['', '-wal', '-shm']) rmSync(path + suffix, { force: true });
     }
     rmdirSync(folder);
   }

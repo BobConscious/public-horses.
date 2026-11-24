@@ -153,12 +153,7 @@ function SeedPouch({ seeds, selectedId, full, busy, headingRef, onPick }) {
             ))}
           </ul>
         </>
-      ) : (
-        <>
-          <p className="garden-help">Record an act of service to add a seed.</p>
-          <a className="garden-text-link" href="/#projects">Find a way to serve <ArrowRight size={15} aria-hidden="true" /></a>
-        </>
-      )}
+      ) : <p className="garden-help">Record an act of service to add a seed.</p>}
     </section>
   );
 }
@@ -366,9 +361,12 @@ function MemberGarden() {
 
   return (
     <>
-      {seeds.length > 0 && <a className="garden-text-link garden-journal-link" href="#service-journal">
-        Open service journal <ArrowRight size={15} aria-hidden="true" />
-      </a>}
+      <div className="garden-actions">
+        {seeds.length > 0 && <a className="garden-text-link" href="#service-journal">
+          Open service journal <ArrowRight size={15} aria-hidden="true" />
+        </a>}
+        <a className="garden-text-link" href="/#projects">Find a way to serve <ArrowRight size={15} aria-hidden="true" /></a>
+      </div>
       <div className="garden-layout">
         <aside className="garden-sidebar" aria-label="Garden tools">
           {inspected && <PlantDetails

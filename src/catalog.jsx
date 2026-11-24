@@ -282,10 +282,16 @@ export function ProjectPage({ slug, user, sessionReady }) {
                 <ul className="need-list">
                   {project.needs.map((need) => {
                     const url = project.open && !project.demo ? officialUrl(need.url) : null;
+                    const availabilityHint = need.type === 'time' ? 'time-response-hint' : undefined;
                     return (
                       <li key={need.type}>
                         <div><h3>{kindName(need.type)}</h3><p>{need.detail}</p></div>
-                        {url && <Button href={url} target="_blank" rel="noopener noreferrer">Respond to organizer <ArrowUpRight size={17} aria-hidden="true" /></Button>}
+                        {url && <div className="need-action">
+                          <Button href={url} target="_blank" rel="noopener noreferrer" aria-describedby={availabilityHint}>
+                            Respond to organizer <ArrowUpRight size={17} aria-hidden="true" />
+                          </Button>
+                          {availabilityHint && <p id={availabilityHint}>Check current availability on the organizer’s page.</p>}
+                        </div>}
                       </li>
                     );
                   })}
