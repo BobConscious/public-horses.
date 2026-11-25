@@ -31,6 +31,8 @@ Open [the interactive demo](http://127.0.0.1:4173/experience) to try sample requ
 
 In My garden, click or tap a plot to walk to it. You can also walk with the arrow keys or WASD and press E to interact. Use the garden plot list to reach the same controls directly. Before you water a seed, remember emptiness and rejoice in the act that planted it.
 
+See the [walkthrough](public/walkthrough/index.html) or [slide PDF](public/walkthrough/Public-Horses-Walkthrough.pdf) for the organization workspace, the service board, and the private garden.
+
 ```sh
 npm run reviewer -- --demo reviewer@example.org
 npm test
