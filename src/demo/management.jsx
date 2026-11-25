@@ -38,30 +38,30 @@ function RequestEditor({ project, onSave, onCancel }) {
   return (
     <form className="demo-editor" onSubmit={save}>
       <h2>{project ? 'Edit request' : 'New opportunity'}</h2>
-      <Field label="Title" name="title" required maxLength={96} defaultValue={project?.title ?? 'Pack grocery bags for the next pickup'} />
+      <Field label="Title" name="title" required maxLength={96} defaultValue={project?.title ?? 'Help set up a free yoga class'} />
       <div className="demo-form-columns">
-        <Field label="Location" name="place" as="select" defaultValue={project?.place ?? 'york'}>
+        <Field label="Location" name="place" as="select" defaultValue={project?.place ?? 'mexico'}>
           {Object.entries(places).map(([id, city]) => <option key={id} value={id}>{city.label}</option>)}
           <option value="online">Online</option>
         </Field>
         <Field label="Date" name="day" type="date" required min={dateOffset().slice(0, 10)}
           defaultValue={(project?.date ?? dateOffset(7)).slice(0, 10)} />
-        <Field label="Time and duration" name="hours" required maxLength={120} defaultValue={project?.hours ?? '10 to 11 a.m. ET'} />
-        <Field label="Field" name="field" as="select" defaultValue={project?.field ?? 'nourishment'}>
+        <Field label="Time and duration" name="hours" required maxLength={120} defaultValue={project?.hours ?? '45 minutes before class'} />
+        <Field label="Field" name="field" as="select" defaultValue={project?.field ?? 'health'}>
           {fields.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
         </Field>
       </div>
       <Field label="What do you need?" name="summary" as="textarea" rows={2} required maxLength={200}
-        defaultValue={project?.summary ?? 'Help the pantry crew pack grocery bags for the next pickup.'} />
+        defaultValue={project?.summary ?? 'Set out mats and help new students find their places.'} />
       <Field label="What counts as complete?" name="completion" as="textarea" rows={2} required maxLength={280}
-        defaultValue={project?.completion ?? 'Pack and label 20 grocery bags.'} />
+        defaultValue={project?.completion ?? 'Have 12 mats ready before class.'} />
       <div className="demo-form-columns">
         <Field label="Way to help" name="help" as="select" defaultValue={project?.needs[0]?.type ?? 'time'}>
           {supportKinds.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
         </Field>
         <Field label="Response instructions" name="helpDetail" required maxLength={240}
           hint="The demo uses a sample response page for this request."
-          defaultValue={project?.needs[0]?.detail ?? 'Join the pantry crew at the check-in table for one hour.'} />
+          defaultValue={project?.needs[0]?.detail ?? 'Meet the teacher at the room entrance before class.'} />
       </div>
       {error && <p className="form-field__error" role="alert">{error}</p>}
       <div className="form-actions">
@@ -104,7 +104,7 @@ export function Organizer({ projects, updateProject, addProject }) {
   return (
     <section className="demo-wrap demo-inner-page">
       <div className="demo-page-heading">
-        <div><span className="demo-overline">{profile.lead} · {profile.name}</span><h1>Organizer workspace</h1></div>
+        <div><span className="demo-overline">Demo organizer · {profile.name}</span><h1>Organizer workspace</h1></div>
         {!editing && <Button onClick={() => { setEditing('new'); setMessage(''); }}><Plus size={17} aria-hidden="true" /> New opportunity</Button>}
       </div>
       {message && <p className="demo-note" role="status">{message}</p>}
@@ -154,7 +154,7 @@ function ReviewCard({ project, decide }) {
       <div className="demo-completion"><strong>What counts as complete</strong><p>{project.completion}</p></div>
       <details className="demo-proof">
         <summary>Read the private review source</summary>
-        <p>{profile.lead} confirmed the sample request for {profile.name}. The sample response page gives the instructions below.</p>
+        <p>This demo uses a sample request based on {profile.name}. Check these practice response instructions before publishing.</p>
         <ul>{project.needs.map((need) => <li key={need.type}>{need.detail}</li>)}</ul>
       </details>
       {feedback ? (

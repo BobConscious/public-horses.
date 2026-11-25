@@ -44,8 +44,8 @@ export function AboutPage() {
       <GardenScene id="about-garden" image="horse-meadow"
         alt="A bay horse and a gray horse graze beyond a garden fence.">
         <h2 id="about-garden">Why a garden?</h2>
-        <p>The private garden helps you study the karmic correlations of service. Notice how the help you give relates to what you experience later.</p>
-        <p>Record what you want to cultivate, what you did, and what you notice over time. Tend a seed for each act of service. Use what you learn to help create the world you want to live in.</p>
+        <p>We become gardeners of our own minds. Each act of service plants a karmic seed for the world we want to be part of.</p>
+        <p>When you water a seed, first remember emptiness. Then rejoice in the good you did. Use your private journal to reflect on what you notice over time.</p>
         <Button variant="outline" href="/garden">My garden</Button>
       </GardenScene>
     </div>

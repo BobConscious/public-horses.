@@ -27,7 +27,9 @@ npm run demo
 
 Open [the local demo](http://127.0.0.1:4173). It uses five example listings and its own database. The listings include a volunteer request, a monthly event, and a fictional personal profile. Create two local accounts to rehearse organizer and reviewer roles.
 
-Open [the interactive demo](http://127.0.0.1:4173/experience) to browse a populated board, try a response, or explore the garden and review queue. Demo actions stay in the current browser tab.
+Open [the interactive demo](http://127.0.0.1:4173/experience) to try sample requests based on four Yogi Corps projects. The requests, replies, and results are practice records. Demo actions stay in the current browser tab. [Archived Yogi Corps profiles](https://web.archive.org/web/20240913061355/https://www.yogastudiesinstitute.org/YCS)
+
+In My garden, click or tap a plot to walk to it. You can also walk with the arrow keys or WASD and press E to interact. Use the garden plot list to reach the same controls directly. Before you water a seed, remember emptiness and rejoice in the act that planted it.
 
 ```sh
 npm run reviewer -- --demo reviewer@example.org

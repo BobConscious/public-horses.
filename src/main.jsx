@@ -54,10 +54,6 @@ function Header({ path, user, signedIn = Boolean(user), onSignOut = signOutLocal
       <a href="#main" className="skip-link">Skip to content</a>
       <div className="header-inner container">
         <Wordmark />
-        <button type="button" className="mobile-menu" aria-controls="site-navigation" aria-expanded={expanded}
-          aria-label={expanded ? 'Close menu' : 'Open menu'} onClick={() => setExpanded(!expanded)}>
-          {expanded ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
-        </button>
         <nav className="site-navigation" id="site-navigation" data-expanded={expanded} aria-label="Main navigation">
           <div className="nav-pages">
             <a href="/#projects" aria-current={current('/')}>Projects</a>
@@ -66,12 +62,16 @@ function Header({ path, user, signedIn = Boolean(user), onSignOut = signOutLocal
             {user && <a href="/workspace" aria-current={current('/workspace')}>My projects</a>}
             {user?.reviewer && <a href="/review" aria-current={current('/review')}>Review</a>}
           </div>
-          <div className="nav-account">
-            {signedIn ? <Button variant="plain" disabled={signingOut} onClick={signOut}>Sign out</Button>
-              : <Button href="/sign-in" variant="plain">Sign in</Button>}
-            {!user && <Button href="/workspace">Post an opportunity</Button>}
-          </div>
+          {!user && <Button href="/workspace">Post an opportunity</Button>}
         </nav>
+        <div className="header-account">
+          <button type="button" className="mobile-menu" aria-controls="site-navigation" aria-expanded={expanded}
+            aria-label={expanded ? 'Close menu' : 'Open menu'} onClick={() => setExpanded(!expanded)}>
+            {expanded ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+          </button>
+          {signedIn ? <Button variant="outline" disabled={signingOut} onClick={signOut}>Sign out</Button>
+            : <Button href="/sign-in" variant="outline" aria-current={current('/sign-in')}>Sign in</Button>}
+        </div>
       </div>
       {error && <div className="container"><ErrorNotice error={error} /></div>}
     </header>

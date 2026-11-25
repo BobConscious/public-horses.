@@ -6,8 +6,8 @@ import { filterListings, initialListingFilters } from '../components/listings.js
 import Garden from '../garden.jsx';
 import { ApiContext } from '../http.js';
 import {
-  actionLabels, dateOffset, demoDate, demoHref, demoMember, loadDemoState, makeSeed, places,
-  profiles, projectHref, resetDemoState, saveDemoState, updateGardenSeed, withPublicFacts,
+  actionLabels, dateOffset, demoDate, demoHref, demoMember, featuredProjectId, loadDemoState, makeSeed, places,
+  profiles, projectHref, resetDemoState, saveDemoState, updateGardenSeed, withPublicFacts, yogiCorpsArchive,
 } from './data.js';
 import { Organizer, ReviewQueue } from './management.jsx';
 import './demo.css';
@@ -43,8 +43,9 @@ function DemoHeader({ view }) {
         <nav aria-label="Main navigation" className="demo-navigation">
           {pages.map(([page, label]) => <a href={demoHref(page)} key={page} aria-current={page === current ? 'page' : undefined}>{label}</a>)}
         </nav>
+        <Button className="demo-sign-in" href="/sign-in" variant="outline">Sign in</Button>
       </div>
-      <div className="demo-banner"><p className="demo-wrap">Interactive demo · Changes stay in this tab.</p></div>
+      <div className="demo-banner"><p className="demo-wrap">Sample requests based on YSI Yogi Corps projects. Changes stay in this tab.</p></div>
     </header>
   );
 }
@@ -54,10 +55,7 @@ function DemoFooter({ onReset }) {
     <footer className="demo-footer">
       <div className="demo-wrap demo-footer-row">
         <a href={demoHref('about')}>About Public Horses</a>
-        <details className="demo-credits">
-          <summary>Photo credits</summary>
-          <p>Illustrative photos from Pexels. <a href="https://www.pexels.com/photo/people-preparing-food-packs-6995247/">Julia M Cameron</a> · <a href="https://www.pexels.com/photo/a-person-packing-donations-7156158/">Gustavo Fring</a> · <a href="https://www.pexels.com/photo/gardener-hands-over-plants-on-ground-27176054/">Helena Lopes</a> · <a href="https://www.pexels.com/photo/man-hands-and-office-supplies-on-desk-4087470/">Luna Lovegood</a></p>
-        </details>
+        <a href={yogiCorpsArchive}>Archived Yogi Corps profiles</a>
         <button className="demo-text-button" onClick={onReset}>Reset demo</button>
       </div>
     </footer>
@@ -112,8 +110,8 @@ function Board({ projects, options, setOptions }) {
   const visible = projects.filter((project) => project.status === status);
   const matches = filterListings(visible, { query, field, help, type: 'all' }).filter((project) => city === 'all' || project.place === city);
   const filtered = query.trim() || field !== 'all' || help !== 'all' || city !== 'all';
-  const featured = projects.find(({ id, status }) => id === 'pack-grocery-bags' && status === 'published');
-  const online = matches.filter(({ mapLocation }) => !mapLocation);
+  const featured = projects.find(({ id, status }) => id === featuredProjectId && status === 'published');
+  const unpinned = matches.filter(({ mapLocation }) => !mapLocation);
   return (
     <div className="demo-wrap">
       <section className="demo-welcome" aria-labelledby="welcome-title">
@@ -126,9 +124,9 @@ function Board({ projects, options, setOptions }) {
           </div>
         </div>
         <figure className="demo-hero-image">
-          <img src="/demo/pantry.jpg" alt="Volunteers prepare food packs together at a table" width="1320" height="880" fetchPriority="high" />
+          <img src="/brand/botanical-swamp-magnolia.webp" alt="Mary Vaux Walcott’s study of swamp magnolia" fetchPriority="high" />
           {featured && <figcaption><a href={projectHref(featured)}>
-            <span><strong>Pack grocery bags</strong><small>Maple Street Pantry · York, PA</small></span><ArrowRight size={18} aria-hidden="true" />
+            <span><strong>{featured.title}</strong><small>{featured.profile.name}</small></span><ArrowRight size={18} aria-hidden="true" />
           </a></figcaption>}
         </figure>
       </section>
@@ -143,7 +141,7 @@ function Board({ projects, options, setOptions }) {
         <div className="demo-filters">
           <div className="demo-search">
             <Search size={18} aria-hidden="true" />
-            <Field label="Search opportunities" type="search" placeholder="Try groceries or bikes" value={query} onChange={(event) => change('query', event.target.value)} />
+            <Field label="Search opportunities" type="search" placeholder="Try chair yoga or captions" value={query} onChange={(event) => change('query', event.target.value)} />
           </div>
           <Field label="Location" as="select" value={city} onChange={(event) => change('city', event.target.value)}>
             <option value="all">All locations</option>
@@ -167,10 +165,9 @@ function Board({ projects, options, setOptions }) {
         {matches.length === 0 ? <div className="demo-empty"><Search aria-hidden="true" /><h3>No matching opportunities</h3><p>Try a different location or way to help.</p></div>
           : display === 'map' ? (
             <div className="demo-map-pane">
-              {online.length !== matches.length
-                ? <Suspense fallback={<p role="status">Loading the map…</p>}><ProjectMap projects={matches} getProjectHref={projectHref} /></Suspense>
-                : <p className="demo-muted">These opportunities are online.</p>}
-              {online.length > 0 && <section className="demo-online"><h3>Online opportunities</h3><ProjectGrid projects={online} /></section>}
+              {unpinned.length !== matches.length &&
+                <Suspense fallback={<p role="status">Loading the map…</p>}><ProjectMap projects={matches} getProjectHref={projectHref} /></Suspense>}
+              {unpinned.length > 0 && <section className="demo-online"><h3>Requests without a map pin</h3><ProjectGrid projects={unpinned} /></section>}
             </div>
           ) : <ProjectGrid projects={matches} />}
       </section>
@@ -203,7 +200,7 @@ function Opportunity({ project, responses, seeds, openAction }) {
       </div>
       <div className="demo-detail-grid">
         <section className="demo-detail-main">
-          {done && <div className="demo-result"><Check size={22} aria-hidden="true" /><div><strong>The organizer confirmed the result</strong><p>{project.result}</p></div></div>}
+          {done && <div className="demo-result"><Check size={22} aria-hidden="true" /><div><strong>Sample result from the organizer</strong><p>{project.result}</p></div></div>}
           {!open && !done && <p className="demo-note">The organizer closed this request.</p>}
           <h2>{open ? 'How you can help' : 'The request'}</h2>
           <div className="demo-completion"><strong>What counts as complete</strong><p>{project.completion}</p></div>
@@ -251,7 +248,9 @@ function OrganizerProfile({ id, projects }) {
       <a href={boardAnchor} className="demo-back"><ArrowLeft size={17} aria-hidden="true" /> Service board</a>
       <div className="demo-profile-header">
         <OrganizerBadge profile={profile} />
-        <div><h1>{profile.name}</h1><p>{profile.about}</p><p className="demo-muted">{profile.lead} · {places[profile.place]?.label ?? 'Online'}</p></div>
+        <div><h1>{profile.name}</h1><p>{profile.about}</p><p className="demo-muted">{profile.lead} · {profile.location ?? places[profile.place]?.label}</p>
+          <a className="demo-inline-link" href={yogiCorpsArchive}>Archived Yogi Corps profile</a>
+        </div>
       </div>
       <h2 className="demo-subheading">Open requests</h2>
       {active.length ? <ProjectGrid projects={active} /> : <p className="demo-muted">This organizer has no open requests.</p>}

@@ -4,7 +4,9 @@
 
 **Vision.** People make service a lifelong practice. Community organizers can ask for specific help and get what they need.
 
-In the teaching, a village pooled its resources for a horse anyone could use. For yogis, becoming a public horse means spending our lives serving others. The board gives people a way to start. The garden gives them a place to study the karmic correlations of service. They can reflect on what they gave and what they notice in their lives over time. [Public Horses course](https://www.yogastudiesinstitute.org/offers/LwbhTdqj)
+In the teaching, a village pooled its resources for a horse anyone could use. For yogis, becoming a public horse means spending our lives serving others. The board gives people a way to start.
+
+We become gardeners of our own minds. Each act of service plants a karmic seed for the world we want to be part of. To water a seed, first remember emptiness. Things have no fixed nature of their own. They arise through causes and conditions. Then recall the act and rejoice in the good you did. The private journal lets you reflect on what you notice over time. [Public Horses course](https://www.yogastudiesinstitute.org/offers/LwbhTdqj)
 
 ## Participant journey
 
