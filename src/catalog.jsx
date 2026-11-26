@@ -5,7 +5,7 @@ import { useApi } from './http.js';
 import { signInLink } from './auth.jsx';
 import { Button, Field, Notice } from './components/controls.jsx';
 import { FeaturedOpportunities, filterListings, initialListingFilters, ListingFilters, ProjectCards, ProjectOrganizer, ShortlistToggle, SwipeOpportunities } from './components/listings.jsx';
-import { ShortlistDialog, useShortlist } from './shortlist.jsx';
+import { ShortlistDialog, useOpportunityChoices } from './shortlist.jsx';
 import { Deadline, EmptyProjects, ErrorNotice, LoadState, fieldName, kindName, listingTypeName, officialUrl, useLoad } from './ui.jsx';
 
 const ProjectMap = lazy(() => import('./components/project-map.jsx'));
@@ -56,6 +56,15 @@ function MapResults({ projects, cardActions }) {
   );
 }
 
+function PassStatus({ title, onUndo }) {
+  return (
+    <>
+      <span className="project-pass-status">Passed</span>
+      <Button variant="plain" aria-label={`Undo pass on ${title}`} onClick={onUndo}>Undo pass</Button>
+    </>
+  );
+}
+
 export function HomePage() {
   const load = useLoad('/projects');
   const [filters, setFilters] = useState(initialListingFilters);
@@ -66,9 +75,10 @@ export function HomePage() {
   const [city, setCity] = useState(() => new URLSearchParams(window.location.search).get('city') ?? '');
   const directory = useRef(null);
   const shortlistButton = useRef(null);
-  const shortlist = useShortlist();
+  const shortlist = useOpportunityChoices();
   const [shortlistOpen, setShortlistOpen] = useState(() => new URLSearchParams(window.location.search).get('shortlist') === '1');
   const savedIds = new Set(shortlist.entries.map(({ id }) => id));
+  const passedOrder = new Map(shortlist.passed.map((id, index) => [id, index]));
   const savedCount = savedIds.size;
   const projects = load.data?.projects ?? [];
   const cities = [...new Map(projects.filter(({ mapLocation }) => mapLocation)
@@ -77,7 +87,8 @@ export function HomePage() {
   const selectedCity = cities.some(([id]) => id === city) ? city : '';
   const filtered = Boolean(selectedCity || filters.query.trim() || filters.field !== 'all' || filters.type !== 'all');
   const matches = filterListings(projects, filters).filter(({ mapLocation }) => !selectedCity || mapLocation?.id === selectedCity);
-  const swipeProjects = view === 'swipe' ? matches.slice(0, swipeLimit) : [];
+  const pending = matches.filter(({ id }) => !savedIds.has(id) && !passedOrder.has(id));
+  const listProjects = [...matches].sort((a, b) => (passedOrder.get(a.id) ?? -1) - (passedOrder.get(b.id) ?? -1));
 
   useEffect(() => {
     if (window.location.hash === '#projects') directory.current?.scrollIntoView();
@@ -121,8 +132,11 @@ export function HomePage() {
 
   function saveAction(project) {
     const saved = savedIds.has(project.id);
-    return <ShortlistToggle project={project} saved={saved}
-      onToggle={() => saved ? shortlist.remove(project.id) : shortlist.save(project)} />;
+    return <>
+      {passedOrder.has(project.id) && <PassStatus title={project.title} onUndo={() => shortlist.undoPass(project.id)} />}
+      <ShortlistToggle project={project} saved={saved}
+        onToggle={() => saved ? shortlist.remove(project.id) : shortlist.save(project)} />
+    </>;
   }
 
   return (
@@ -174,10 +188,9 @@ export function HomePage() {
                 setDirectoryView(view, '');
               }} />
             ) : view === 'map' ? <MapResults projects={matches} cardActions={saveAction} /> : view === 'swipe' ? (
-              <SwipeOpportunities key={swipeProjects.map(({ id }) => id).join(',')} projects={swipeProjects} savedIds={savedIds}
-                onSave={shortlist.save} onRemove={shortlist.remove}
-                onBrowseAll={matches.length > swipeLimit ? browseAll : undefined} />
-            ) : <ProjectCards projects={matches} cardActions={saveAction} />}
+              <SwipeOpportunities key={matches.map(({ id }) => id).join(',')} projects={pending.slice(0, swipeLimit)}
+                remaining={pending.length} onSave={shortlist.save} onPass={shortlist.pass} onBrowseAll={browseAll} />
+            ) : <ProjectCards projects={listProjects} cardActions={saveAction} />}
           </div>
         </div>
       </section>
@@ -308,7 +321,7 @@ function SupportForm({ project, user }) {
 export function ProjectPage({ slug, user, sessionReady }) {
   const load = useLoad(`/projects/${encodeURIComponent(slug)}`);
   const project = load.data?.project;
-  const shortlist = useShortlist();
+  const shortlist = useOpportunityChoices();
   const saved = shortlist.entries.some(({ id }) => id === project?.id);
   const fromShortlist = new URLSearchParams(window.location.search).get('from') === 'shortlist';
   return (
@@ -330,6 +343,7 @@ export function ProjectPage({ slug, user, sessionReady }) {
             {project.schedule && <p className="project-schedule">{project.schedule}</p>}
             <p>{project.summary}</p>
             {project.open && <div className="project-card-actions">
+              {shortlist.passed.includes(project.id) && <PassStatus title={project.title} onUndo={() => shortlist.undoPass(project.id)} />}
               <ShortlistToggle project={project} saved={saved}
                 onToggle={() => saved ? shortlist.remove(project.id) : shortlist.save(project)} />
               {!fromShortlist && shortlist.entries.length > 0 && <Button variant="plain" href="/?shortlist=1#projects">
