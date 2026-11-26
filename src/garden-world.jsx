@@ -31,17 +31,17 @@ function move(player, x, y) {
   player.y = y;
 }
 
-export default function GardenWorld({ canvasRef, plants, selectedSeed, busy, onPlot, onJournal }) {
+export default function GardenWorld({ canvasRef, plants, selectedSeed, watering, busy, onPlot, onJournal }) {
   const options = useRef(null);
   const player = useRef({ ...spawn, facing: 'down', moving: false, path: [], target: null });
-  const camera = useRef({ x: 0, y: 0 });
+  const camera = useRef({ x: 0, y: 0, width: 480, height: 270 });
   const keys = useRef(new Set());
   const [near, setNear] = useState(null);
   const [walking, setWalking] = useState(null);
   const [available, setAvailable] = useState(true);
 
   useLayoutEffect(() => {
-    options.current = { plants, selectedSeed, busy, onPlot, onJournal };
+    options.current = { plants, selectedSeed, watering, busy, onPlot, onJournal };
   });
 
   useEffect(() => {
@@ -53,6 +53,9 @@ export default function GardenWorld({ canvasRef, plants, selectedSeed, busy, onP
     }
     const terrain = document.createElement('canvas');
     paintTerrain(terrain);
+    const meadow = new Image();
+    meadow.onload = () => paintTerrain(terrain, meadow);
+    meadow.src = '/art/garden/watercolor-meadow.webp';
     const compact = window.matchMedia('(max-width: 650px)');
     const still = window.matchMedia('(prefers-reduced-motion: reduce)');
     const person = player.current;
@@ -72,10 +75,14 @@ export default function GardenWorld({ canvasRef, plants, selectedSeed, busy, onP
       lastTime = time;
       const width = compact.matches ? 276 : 480;
       const height = compact.matches ? 222 : 270;
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
+      const density = Math.min(window.devicePixelRatio || 1, 2);
+      const pixelWidth = Math.round(width * density);
+      const pixelHeight = Math.round(height * density);
+      if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+        canvas.width = pixelWidth;
+        canvas.height = pixelHeight;
       }
+      ctx.setTransform(pixelWidth / width, 0, 0, pixelHeight / height, 0, 0);
       let dx = 0;
       let dy = 0;
       for (const key of keys.current) {
@@ -108,10 +115,16 @@ export default function GardenWorld({ canvasRef, plants, selectedSeed, busy, onP
         lastNear = nearby;
         setNear(nearby ?? null);
       }
-      camera.current.x = Math.max(0, Math.min(worldSize.width - width, person.x - width / 2));
-      camera.current.y = Math.max(0, Math.min(worldSize.height - height, person.y - height * .80));
+      const view = camera.current;
+      view.width = width;
+      view.height = height;
+      view.x = Math.round(Math.max(0, Math.min(worldSize.width - width, person.x - width / 2)));
+      view.y = Math.round(Math.max(0, Math.min(worldSize.height - height, person.y - height * .80)));
       const current = options.current;
-      drawGarden(ctx, terrain, camera.current, person, current.plants, nearby, Boolean(current.selectedSeed), still.matches ? 0 : time);
+      drawGarden(ctx, terrain, view, person, {
+        plants: current.plants, nearest: nearby, canPlant: Boolean(current.selectedSeed),
+        time: still.matches ? 0 : time, watering: still.matches ? null : current.watering,
+      });
       frame = requestAnimationFrame(tick);
     }
 
@@ -119,6 +132,7 @@ export default function GardenWorld({ canvasRef, plants, selectedSeed, busy, onP
     window.addEventListener('blur', stopInput);
     return () => {
       cancelAnimationFrame(frame);
+      meadow.onload = null;
       window.removeEventListener('blur', stopInput);
       keys.current.clear();
     };
@@ -136,9 +150,10 @@ export default function GardenWorld({ canvasRef, plants, selectedSeed, busy, onP
     const bounds = canvas.getBoundingClientRect();
     canvas.focus({ preventScroll: true });
     keys.current.clear();
+    const view = camera.current;
     const point = {
-      x: camera.current.x + (event.clientX - bounds.left) * canvas.width / bounds.width,
-      y: camera.current.y + (event.clientY - bounds.top) * canvas.height / bounds.height,
+      x: view.x + (event.clientX - bounds.left) * view.width / bounds.width,
+      y: view.y + (event.clientY - bounds.top) * view.height / bounds.height,
     };
     const target = landmarkAt(point);
     const person = player.current;

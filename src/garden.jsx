@@ -80,10 +80,11 @@ function Plot({ number, seed, selectedSeed, inspected, busy, onInspect, onPlant 
   );
 }
 
-function WateringPractice({ seed, busy, onCancel, onWater }) {
+function WateringPractice({ seed, busy, onClose, onWater, onWatered }) {
   const [rejoice, setRejoice] = useState(false);
   const dialog = useRef(null);
   const heading = useRef(null);
+  const saving = useRef(false);
 
   useEffect(() => {
     const panel = dialog.current;
@@ -95,7 +96,19 @@ function WateringPractice({ seed, busy, onCancel, onWater }) {
 
   function cancel(event) {
     event.preventDefault();
-    if (!busy) onCancel();
+    if (busy) return;
+    dialog.current.close();
+    onClose();
+  }
+
+  async function water() {
+    if (saving.current) return;
+    saving.current = true;
+    const result = await onWater();
+    if (!dialog.current) return;
+    dialog.current.close();
+    onClose();
+    if (result?.waters > seed.waters) onWatered(result.plot);
   }
 
   return (
@@ -118,16 +131,16 @@ function WateringPractice({ seed, busy, onCancel, onWater }) {
         </>
       )}
       <div className="form-actions garden-watering__actions">
-        {rejoice ? <Button onClick={onWater} disabled={busy}>{busy ? 'Watering…' : 'Water this seed'}</Button>
+        {rejoice ? <Button onClick={water} disabled={busy}>{busy ? 'Watering…' : 'Water this seed'}</Button>
           : <Button onClick={() => setRejoice(true)}>Continue to rejoicing</Button>}
         {rejoice && <Button variant="outline" onClick={() => setRejoice(false)} disabled={busy}>Back</Button>}
-        <Button variant="plain" onClick={onCancel} disabled={busy}>Cancel</Button>
+        <Button variant="plain" onClick={cancel} disabled={busy}>Cancel</Button>
       </div>
     </dialog>
   );
 }
 
-function PlantDetails({ seed, busy, headingRef, onWater, onHarvest }) {
+function PlantDetails({ seed, busy, headingRef, onWater, onWatered, onHarvest }) {
   const [practicing, setPracticing] = useState(false);
   const [today, setToday] = useState(() => dayKey(Date.now()));
   useEffect(() => {
@@ -167,10 +180,8 @@ function PlantDetails({ seed, busy, headingRef, onWater, onHarvest }) {
           {wateredToday && <p className="garden-help">Water again after midnight UTC.</p>}
         </>
       )}
-      {practicing && <WateringPractice seed={seed} busy={busy} onCancel={() => setPracticing(false)} onWater={async () => {
-        await onWater();
-        setPracticing(false);
-      }} />}
+      {practicing && <WateringPractice seed={seed} busy={busy} onClose={() => setPracticing(false)}
+        onWater={onWater} onWatered={onWatered} />}
     </section>
   );
 }
@@ -307,7 +318,9 @@ function MemberGarden({ boardHref }) {
   const [status, setStatus] = useState('');
   const [actionError, setActionError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [watering, setWatering] = useState(null);
   const updating = useRef(false);
+  const openedFromWorld = useRef(false);
   const canvasRef = useRef(null);
   const plotsRef = useRef(null);
   const plantHeading = useRef(null);
@@ -391,10 +404,11 @@ function MemberGarden({ boardHref }) {
     }
   }
 
-  async function plant(number) {
+  async function plant(number, fromWorld = false) {
     if (!selectedSeed) return;
     const seed = await updateSeed(selectedSeed.id, 'plant', { plot: number }, `Seed planted in plot ${number}.`);
     if (seed) {
+      openedFromWorld.current = fromWorld;
       nextFocus.current = 'plant';
       setSelectedSeedId(null);
       setInspectedId(seed.id);
@@ -409,7 +423,8 @@ function MemberGarden({ boardHref }) {
     setActionError('');
   }
 
-  function inspect(id) {
+  function inspect(id, fromWorld = false) {
+    openedFromWorld.current = fromWorld;
     if (id === inspectedId) {
       plantHeading.current?.focus();
       return;
@@ -430,9 +445,17 @@ function MemberGarden({ boardHref }) {
 
   function usePlot(number) {
     const seed = seedsByPlot.get(number);
-    if (seed) inspect(seed.id);
-    else if (selectedSeed) plant(number);
+    if (seed) inspect(seed.id, true);
+    else if (selectedSeed) plant(number, true);
     else pouchHeading.current?.focus();
+  }
+
+  function showWatering(plot) {
+    if (openedFromWorld.current && canvasRef.current) {
+      canvasRef.current.focus({ preventScroll: true });
+      canvasRef.current.scrollIntoView({ block: 'nearest' });
+    }
+    setWatering({ plot, startedAt: performance.now() });
   }
 
   function openJournal() {
@@ -455,7 +478,7 @@ function MemberGarden({ boardHref }) {
             <h2 id="garden-beds-title">Garden beds</h2>
             <span>{planted.length} of {gardenPlots.length} planted</span>
           </header>
-          <GardenWorld canvasRef={canvasRef} plants={seedsByPlot} selectedSeed={selectedSeed}
+          <GardenWorld canvasRef={canvasRef} plants={seedsByPlot} selectedSeed={selectedSeed} watering={watering}
             onPlot={usePlot} onJournal={openJournal} busy={busy} />
           <div className="garden-beds__foot">
             {actionError && <p role="alert" className="garden-feedback garden-feedback--error">{actionError}</p>}
@@ -486,6 +509,7 @@ function MemberGarden({ boardHref }) {
             busy={busy}
             headingRef={plantHeading}
             onWater={() => updateSeed(inspected.id, 'water', {}, 'Seed watered.')}
+            onWatered={showWatering}
             onHarvest={harvest}
           />}
           <SeedPouch

@@ -95,9 +95,9 @@
   display: block;
   width: 100%;
   aspect-ratio: 480 / 270;
-  background: #95a45f;
+  background: #c6cda1;
   cursor: pointer;
-  image-rendering: pixelated;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .garden-world canvas:focus-visible { outline: 3px solid #fff0aa; outline-offset: -4px; }

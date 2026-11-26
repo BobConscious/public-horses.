@@ -81,6 +81,7 @@ Use a whole botanical plate where the specimen matters. Crop scenery around its 
 | [Flower Garden and Bungalow, Bermuda](../public/art/flower-garden.jpg) | Winslow Homer, 1899. The Metropolitan Museum of Art, public domain. Home page garden. [Collection record](https://www.metmuseum.org/art/collection/search/11121) |
 | [City and Sunset](../server/fixtures/city-sunset.webp) | Henry Farrer. The Metropolitan Museum of Art, public domain. Sample event illustration. [Collection record](https://www.metmuseum.org/art/collection/search/10872) |
 | [Flower path](../public/art/about-flower-path.webp), [garden pond](../public/art/about-garden-pond.webp), [horse meadow](../public/art/about-horse-meadow.webp) | Generated illustrations for the About page. |
+| [Watercolor meadow](../public/art/garden/watercolor-meadow.webp) | Generated grass and paper texture for the walkable garden. |
 
 Keep the artist, institution, credit, and source link with each archival image. Label illustrations as illustrations when readers could mistake them for project photos.
 

@@ -1,275 +1,273 @@
 import { gardenPlots, journalBench, pond, shed, worldSize } from './garden-world-layout.js';
 
-const plantColors = {
-  nourishment: ['#f1bc66', '#aa6039'],
-  health: ['#fff0c2', '#ce9853'],
-  relationships: ['#e69c94', '#a74d57'],
-  livelihood: ['#e4aa69', '#a45a41'],
-  happiness: ['#efcc72', '#cf8040'],
-  partnership: ['#c3a3d3', '#7c5e9b'],
+const ink = '#3d4e3c';
+const bloomColors = {
+  nourishment: '#daa861',
+  health: '#f6e6b7',
+  relationships: '#d39a9c',
+  livelihood: '#ce9166',
+  happiness: '#edc675',
+  partnership: '#b5a6c7',
 };
+const paths = [
+  [[309, 362], [309, 297], [414, 296], [438, 270], [495, 269]],
+  [[108, 323], [152, 300], [309, 297]],
+  [[146, 300], [152, 222], [146, 168], [139, 148]],
+  [[413, 296], [418, 221], [418, 117], [382, 91], [233, 89], [181, 106]],
+];
 
-function fill(ctx, color, x, y, width, height) {
+function paintShape(ctx, color, outline, width = 1) {
   ctx.fillStyle = color;
-  ctx.fillRect(Math.round(x), Math.round(y), width, height);
-}
-
-function oval(ctx, color, x, y, rx, ry, step = 2) {
-  for (let row = -ry; row < ry; row += step) {
-    const span = Math.round(rx * Math.sqrt(1 - ((row + step / 2) / ry) ** 2));
-    if (span > 0) fill(ctx, color, x - span, y + row, span * 2, step);
+  ctx.fill();
+  if (outline) {
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = width;
+    ctx.stroke();
   }
 }
 
-function polygon(ctx, color, points) {
-  ctx.fillStyle = color;
+function ellipse(ctx, x, y, rx, ry, color, outline, angle = 0) {
   ctx.beginPath();
-  ctx.moveTo(...points[0]);
-  for (const point of points.slice(1)) ctx.lineTo(...point);
-  ctx.closePath();
-  ctx.fill();
+  ctx.ellipse(x, y, rx, ry, angle, 0, Math.PI * 2);
+  paintShape(ctx, color, outline);
 }
 
-function trail(ctx, color, width, points) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
+function box(ctx, x, y, width, height, radius, color, outline) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, radius);
+  paintShape(ctx, color, outline);
+}
+
+function line(ctx, points, color, width = 1) {
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
   ctx.beginPath();
   ctx.moveTo(...points[0]);
   for (const point of points.slice(1)) ctx.lineTo(...point);
   ctx.stroke();
 }
 
-function randomSource() {
-  let seed = 438217;
-  return () => {
-    seed = (Math.imul(1_664_525, seed) + 1_013_904_223) >>> 0;
-    return seed / 4_294_967_296;
-  };
-}
-
-function flowers(ctx, x, y, tint) {
-  for (const [dx, dy] of [[0, 0], [5, 4], [-6, 4], [2, 9]]) {
-    fill(ctx, '#507545', x + dx, y + dy + 1, 2, 4);
-    fill(ctx, tint, x + dx - 1, y + dy, 4, 2);
-    fill(ctx, '#e6c26c', x + dx, y + dy, 1, 1);
+function paintPaths(ctx) {
+  ctx.beginPath();
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  for (const [start, ...points] of paths) {
+    ctx.moveTo(...start);
+    for (const point of points) ctx.lineTo(...point);
+  }
+  for (const [width, color] of [[27, '#8e8b5d38'], [22, '#e6d4a5d9'], [15, '#f4e1b673'], [8, '#f5e7bd39']]) {
+    ctx.lineWidth = width;
+    ctx.strokeStyle = color;
+    ctx.stroke();
   }
 }
 
-function tree(ctx, x, y, size, gold) {
-  const dark = gold ? '#69613c' : '#365641';
-  const leaf = gold ? '#969355' : '#4f764a';
-  const bright = gold ? '#b7a862' : '#668a52';
-  oval(ctx, '#75804d', x + 7, y + 2, size + 5, 8, 2);
-  fill(ctx, '#584b35', x - 3, y - size, 7, size + 1);
-  fill(ctx, '#a77d4e', x - 1, y - size + 2, 2, size - 2);
-  oval(ctx, dark, x, y - size - 8, Math.round(size * 1.04), size, 3);
-  oval(ctx, leaf, x - 4, y - size - 12, Math.round(size * .89), Math.round(size * .84), 3);
-  oval(ctx, bright, x - 8, y - size - 17, Math.round(size * .63), Math.round(size * .59), 2);
-  for (let i = 0; i < 11; i += 1) {
-    const dx = Math.round(Math.sin(i * 2.4) * size * .57);
-    const dy = Math.round(Math.cos(i * 1.6) * size * .50);
-    fill(ctx, i % 3 ? bright : leaf, x - 4 + dx, y - size - 15 + dy, i % 2 ? 3 : 5, 2);
+function flowers(ctx, x, y, color) {
+  for (const [dx, dy] of [[0, 0], [6, 5], [-5, 7]]) {
+    line(ctx, [[x + dx, y + dy], [x + dx - 1, y + dy + 5]], '#667c52', .8);
+    ellipse(ctx, x + dx, y + dy, 2.2, 1.7, color);
+    ellipse(ctx, x + dx, y + dy, .65, .65, '#a78354');
   }
 }
 
-function gardenShed(ctx) {
+function tree(ctx, x, y, size, golden) {
+  const color = golden ? '#a3a468' : '#6c8a60';
+  ellipse(ctx, x + 6, y + 3, size * .89, 8, '#63765338');
+  line(ctx, [[x - 1, y], [x + 1, y - size], [x + 6, y - size - 6]], '#715e49', 4);
+  const crownY = y - size * .8;
+  ellipse(ctx, x + 2, crownY, size, size * .73, '#5c784577');
+  ellipse(ctx, x - size * .25, crownY - size * .3, size * .75, size * .67, color);
+  ellipse(ctx, x + size * .35, crownY + size * .2, size * .62, size * .54, color);
+  ellipse(ctx, x - size * .39, crownY - size * .42, size * .52, size * .36, '#d2d29a4d');
+  for (const [dx, dy] of [[-.5, -.4], [.33, .04], [.45, -.32], [-.45, .19], [.08, -.6]]) {
+    ellipse(ctx, x + dx * size, crownY + dy * size, size * .19, size * .08, '#e1dfb178', null, -.5);
+  }
+}
+
+function paintShed(ctx) {
   const { x, y } = shed;
-  oval(ctx, '#79834d', x + 6, y + 23, 40, 12);
-  fill(ctx, '#644e3a', x - 30, y - 11, 60, 29);
-  fill(ctx, '#d6b182', x - 28, y - 10, 55, 24);
-  fill(ctx, '#ae8054', x + 23, y - 8, 4, 23);
-  for (let row = -7; row < 15; row += 5) fill(ctx, '#b88d5f', x - 28, y + row, 55, 1);
-  polygon(ctx, '#68433a', [[x - 37, y - 10], [x - 24, y - 35], [x - 16, y - 39],
-    [x + 16, y - 39], [x + 24, y - 35], [x + 37, y - 10]]);
-  polygon(ctx, '#a25942', [[x - 33, y - 13], [x - 22, y - 33], [x + 21, y - 33], [x + 33, y - 13]]);
-  for (let row = 0; row < 4; row += 1) {
-    fill(ctx, '#cb805a', x - 21 - row * 3, y - 32 + row * 5, 42 + row * 6, 2);
-    for (let tile = -18 + (row % 2) * 4; tile <= 20; tile += 8) {
-      fill(ctx, '#7c483a', x + tile, y - 31 + row * 5, 1, 4);
-    }
+  ellipse(ctx, x + 3, y + 17, 38, 8, '#58684538');
+  box(ctx, x - 29, y - 13, 58, 28, 2, '#ddc197', '#726450');
+  ctx.beginPath();
+  ctx.moveTo(x - 34, y - 11);
+  ctx.lineTo(x - 21, y - 34);
+  ctx.quadraticCurveTo(x, y - 39, x + 21, y - 34);
+  ctx.lineTo(x + 34, y - 11);
+  ctx.closePath();
+  const roof = ctx.createLinearGradient(0, y - 36, 0, y - 10);
+  roof.addColorStop(0, '#c98971');
+  roof.addColorStop(1, '#916048');
+  paintShape(ctx, roof, '#715343', 1.5);
+  for (const [offset, width] of [[-29, 40], [-22, 49], [-16, 57]]) {
+    line(ctx, [[x - width / 2, y + offset], [x + width / 2, y + offset + 1]], '#7f52386b', .9);
   }
-  fill(ctx, '#704d36', x - 5, y - 5, 13, 21);
-  fill(ctx, '#34504a', x - 3, y - 3, 9, 18);
-  fill(ctx, '#dcb36a', x + 3, y + 6, 2, 2);
-  fill(ctx, '#645b42', x - 24, y - 4, 12, 12);
-  fill(ctx, '#e4c783', x - 22, y - 2, 8, 8);
-  fill(ctx, '#af8960', x - 19, y - 3, 1, 10);
-  fill(ctx, '#965b45', x - 25, y + 7, 14, 4);
-  flowers(ctx, x + 24, y + 17, '#e6bb9a');
-  fill(ctx, '#b5a783', x - 5, y + 17, 15, 5);
+  box(ctx, x - 4, y - 5, 13, 20, 1, '#56725a', ink);
+  ellipse(ctx, x + 6, y + 6, .9, .9, '#eed6a1');
+  box(ctx, x - 22, y - 5, 11, 10, 1, '#efe1b3', '#7c6b50');
+  line(ctx, [[x - 16.5, y - 4.5], [x - 16.5, y + 4.5]], '#7c6b50', .8);
+  flowers(ctx, x + 24, y + 15, '#eed5bc');
 }
 
-function water(ctx) {
+function paintPond(ctx) {
   const { x, y, width, height } = pond;
-  oval(ctx, '#778c59', x + 3, y + 4, width + 9, height + 7, 3);
-  oval(ctx, '#c2b483', x, y + 1, width + 3, height + 3, 3);
-  oval(ctx, '#456f64', x, y, width, height, 3);
-  oval(ctx, '#538d83', x - 1, y + 3, width - 5, height - 6, 3);
-  oval(ctx, '#6d9f8b', x - 16, y - 11, 54, 30, 3);
+  ellipse(ctx, x + 2, y + 4, width + 7, height + 7, '#637d5d43');
+  ellipse(ctx, x, y, width + 2, height + 2, '#d3c699');
+  const wash = ctx.createLinearGradient(x - 60, y - 40, x + 60, y + 45);
+  wash.addColorStop(0, '#a4bd9d');
+  wash.addColorStop(.47, '#81a897');
+  wash.addColorStop(1, '#5c857a');
+  ellipse(ctx, x, y, width, height, wash, '#55756a');
+  ellipse(ctx, x - 23, y - 18, 48, 25, '#dce7b73b', null, -.2);
+  ellipse(ctx, x + 24, y + 11, 44, 21, '#98bbb240', null, .16);
+
   for (const [dx, dy] of [[-34, -21], [30, 21], [-43, 20], [50, -9]]) {
-    oval(ctx, '#446f55', x + dx, y + dy, 12, 5);
-    oval(ctx, '#81a36c', x + dx - 2, y + dy - 1, 8, 4);
-    fill(ctx, '#e9bba8', x + dx - 3, y + dy - 4, 5, 3);
-    fill(ctx, '#f5ddc1', x + dx - 1, y + dy - 5, 2, 2);
+    ellipse(ctx, x + dx, y + dy, 10, 4, '#63865e');
+    line(ctx, [[x + dx - 8, y + dy - .4], [x + dx, y + dy - 1]], '#bbce9a', .8);
+    ellipse(ctx, x + dx + 1, y + dy - 4, 3.2, 2.5, '#f0cece');
+    ellipse(ctx, x + dx + 1, y + dy - 4, 1, 1, '#ccac68');
   }
-  for (const [dx, dy] of [[-62, -28], [46, -45], [49, 40], [-43, 47], [-72, 22]]) {
-    for (let reed = 0; reed < 5; reed += 1) {
-      fill(ctx, '#516545', x + dx + 4 * reed, y + dy - reed % 3 * 3, 2, 8 + reed % 3 * 2);
-      fill(ctx, '#daaf6e', x + dx + 4 * reed, y + dy - reed % 3 * 3 - 2, 2, 3);
+  for (const [dx, dy] of [[-66, -25], [43, -47], [47, 43], [-43, 51], [-73, 20]]) {
+    for (const stem of [-3, 0, 3]) {
+      line(ctx, [[x + dx + stem, y + dy], [x + dx + stem * 1.9, y + dy - 10 + Math.abs(stem)]], '#62784f', .9);
     }
+    ellipse(ctx, x + dx, y + dy - 10, 1, 2.5, '#b49469');
   }
 }
 
-function bench(ctx) {
+function paintBench(ctx) {
   const { x, y } = journalBench;
-  oval(ctx, '#7f8352', x + 3, y + 8, 24, 9);
-  fill(ctx, '#73563c', x - 17, y - 6, 3, 15);
-  fill(ctx, '#73563c', x + 14, y - 6, 3, 15);
-  fill(ctx, '#946d47', x - 19, y - 8, 38, 12);
-  fill(ctx, '#d0a66f', x - 18, y - 7, 36, 3);
-  fill(ctx, '#b38b52', x - 18, y - 3, 36, 3);
-  fill(ctx, '#815c44', x - 6, y - 10, 13, 8);
-  fill(ctx, '#e9d8a4', x - 5, y - 10, 11, 6);
-  fill(ctx, '#b9a376', x, y - 10, 1, 6);
-  fill(ctx, '#9a7450', x - 3, y - 8, 2, 1);
-  fill(ctx, '#9a7450', x + 2, y - 8, 2, 1);
-  flowers(ctx, x + 27, y + 1, '#ebd493');
+  ellipse(ctx, x + 2, y + 6, 22, 7, '#687c4f42');
+  line(ctx, [[x - 15, y - 3], [x - 15, y + 8]], '#725a44', 3);
+  line(ctx, [[x + 15, y - 3], [x + 15, y + 8]], '#725a44', 3);
+  box(ctx, x - 20, y - 8, 40, 12, 2, '#bb9068', '#665641');
+  line(ctx, [[x - 18, y - 4], [x + 18, y - 4]], '#e3c193');
+  box(ctx, x - 7, y - 11, 14, 10, 1, '#f7e9c9', '#867354');
+  line(ctx, [[x, y - 10], [x, y - 2]], '#998a67', .8);
+  for (const dx of [-4, 2]) line(ctx, [[x + dx, y - 7], [x + dx + 2, y - 7]], '#a69675', .7);
+  flowers(ctx, x + 26, y + 5, '#e5d9ad');
 }
 
-export function paintTerrain(canvas) {
-  canvas.width = worldSize.width;
-  canvas.height = worldSize.height;
+export function paintTerrain(canvas, meadow) {
+  canvas.width = worldSize.width * 2;
+  canvas.height = worldSize.height * 2;
   const ctx = canvas.getContext('2d');
-  const rand = randomSource();
-  const grass = ['#95a45f', '#98a762', '#93a35d', '#9eab68', '#8c9d56'];
-  for (let y = 0; y < worldSize.height; y += 12) {
-    for (let x = 0; x < worldSize.width; x += 12) {
-      fill(ctx, grass[Math.floor(rand() * grass.length)], x, y, 12, 12);
-    }
-  }
+  ctx.scale(2, 2);
+  const grass = ctx.createLinearGradient(0, 0, worldSize.width, worldSize.height);
+  grass.addColorStop(0, '#b4bd8b');
+  grass.addColorStop(.53, '#d4d6ab');
+  grass.addColorStop(1, '#a3b187');
+  ctx.fillStyle = grass;
+  ctx.fillRect(0, 0, worldSize.width, worldSize.height);
+  if (meadow) ctx.drawImage(meadow, 0, 0, worldSize.width, worldSize.height);
 
-  const paths = [
-    [[309, 362], [309, 297], [414, 296], [438, 270], [495, 269]],
-    [[108, 323], [152, 300], [309, 297]],
-    [[146, 300], [152, 222], [146, 168], [139, 148]],
-    [[413, 296], [418, 221], [418, 117], [382, 91], [233, 89], [181, 106]],
-  ];
-  for (const points of paths) trail(ctx, '#a3a36a', 28, points);
-  for (const points of paths) trail(ctx, '#c3b788', 21, points);
-  for (const points of paths) trail(ctx, '#d3c497', 14, points);
-
-  for (let i = 0; i < 1350; i += 1) {
-    const x = Math.floor(rand() * worldSize.width);
-    const y = Math.floor(rand() * worldSize.height);
-    ctx.globalAlpha = .39;
-    fill(ctx, i % 4 === 0 ? '#e0d398' : '#798d53', x, y, i % 4 === 0 ? 2 : 3, 1);
-  }
-  ctx.globalAlpha = 1;
-  for (const [x, y, color] of [[111, 232, '#e6bd8b'], [184, 183, '#e8bbaf'], [410, 237, '#e9d68a'],
-    [196, 275, '#e7ce93'], [261, 321, '#e8bdaf'], [370, 315, '#edca8d'],
-    [453, 228, '#edcb91'], [561, 270, '#e7b1a4'], [434, 74, '#e9cea8'], [210, 113, '#e6bd9d']]) {
-    flowers(ctx, x, y, color);
-  }
-
-  for (const x of [196, 220, 244, 268, 292, 316, 340, 364, 388, 412]) {
-    fill(ctx, '#76674a', x, 75, 25, 3);
-    fill(ctx, '#c9a575', x, 72, 25, 2);
-    fill(ctx, '#e4bc85', x, 70, 3, 11);
-  }
-  water(ctx);
-  for (const [x, y, size, gold] of [[40, 108, 33, 0], [74, 134, 24, 1], [97, 80, 29, 0], [180, 69, 28, 0],
-    [448, 95, 27, 0], [484, 89, 23, 1], [599, 120, 30, 0], [625, 159, 30, 1],
-    [48, 248, 27, 1], [77, 276, 33, 0], [114, 247, 20, 0], [548, 250, 24, 0],
-    [590, 284, 29, 0], [620, 310, 27, 1], [82, 340, 26, 0], [181, 360, 23, 1]]) {
-    tree(ctx, x, y, size, Boolean(gold));
-  }
-  gardenShed(ctx);
-  bench(ctx);
+  paintPaths(ctx);
+  for (const [x, y, color] of [[111, 232, '#e6c7a0'], [184, 183, '#e9cdca'], [408, 237, '#f2e4bc'],
+    [196, 275, '#e5d296'], [261, 321, '#e6bfb8'], [370, 318, '#e8d5a1'], [455, 228, '#ebd6a7'],
+    [561, 270, '#ecc2ba'], [434, 74, '#f0dfb8'], [210, 113, '#eac8b6']]) flowers(ctx, x, y, color);
+  for (const [x, y, size, golden] of [[40, 108, 33, false], [74, 134, 24, true], [97, 80, 29, false], [180, 69, 28, false],
+    [448, 95, 27, false], [484, 89, 23, true], [599, 120, 30, false], [625, 159, 30, true],
+    [48, 248, 27, true], [77, 276, 33, false], [114, 247, 20, false], [548, 250, 24, false],
+    [590, 284, 29, false], [620, 310, 27, true], [82, 340, 26, false], [181, 360, 23, true]]) tree(ctx, x, y, size, golden);
+  paintPond(ctx);
+  paintShed(ctx);
+  paintBench(ctx);
 }
 
-function drawBed(ctx, plot, planted, highlighted, ready) {
-  const { x, y } = plot;
-  fill(ctx, '#798750', x - 18, y - 8, 42, 25);
-  fill(ctx, '#6e553d', x - 20, y - 12, 40, 25);
-  fill(ctx, '#bb9363', x - 20, y - 12, 40, 3);
-  fill(ctx, planted?.waters ? '#91674a' : '#a67f57', x - 17, y - 9, 34, 19);
-  for (let row = -7; row < 10; row += 5) fill(ctx, '#835f46', x - 15, y + row, 30, 1);
-  fill(ctx, '#dcaf73', x - 20, y + 10, 40, 2);
-  if (ready && !planted) {
-    fill(ctx, '#ecd29b', x - 3, y - 1, 7, 1);
-    fill(ctx, '#ecd29b', x, y - 4, 1, 7);
-  }
-  if (highlighted) {
-    ctx.strokeStyle = '#fff0aa';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x - 22, y - 14, 44, 29);
-  }
-  if (!planted) return;
-  const stage = Math.min(3, planted.waters ?? 0);
-  const [bloom, shade] = plantColors[planted.intention] ?? plantColors.health;
-  for (const [dx, dy] of [[-10, 4], [0, 1], [10, 4]]) {
-    const left = x + dx;
-    const top = y + dy;
-    if (!stage) {
-      fill(ctx, '#543d33', left - 1, top, 4, 2);
-      fill(ctx, '#dfae67', left, top - 1, 2, 2);
-      continue;
-    }
-    const height = 3 + stage * 4;
-    fill(ctx, '#486c3f', left, top - height, 2, height + 2);
-    fill(ctx, '#547944', left - 4, top - 7, 5, 3);
-    fill(ctx, '#82a362', left + 2, top - 10, 5, 3);
-    if (stage > 1) {
-      fill(ctx, '#375b3a', left - 4, top - height + 2, 5, 3);
-      fill(ctx, '#a6b870', left + 2, top - height + 3, 3, 2);
-    }
-    if (stage === 3) {
-      fill(ctx, shade, left - 4, top - height - 2, 10, 5);
-      fill(ctx, bloom, left - 2, top - height - 5, 6, 8);
-      fill(ctx, bloom, left - 4, top - height - 3, 10, 4);
-      fill(ctx, '#f2cb70', left, top - height - 2, 3, 3);
-    }
-  }
-}
-
-function avatar(ctx, player, time) {
-  const { x, y, facing, moving } = player;
-  const gait = moving ? Math.floor(time / 110) % 2 * 2 : 0;
-  oval(ctx, '#667044', x + 1, y, 10, 4);
-  fill(ctx, '#513f37', x - 5, y - 5 - gait, 4, 7);
-  fill(ctx, '#513f37', x + 2, y - 5 + gait, 4, 6);
-  fill(ctx, '#324c44', x - 6, y - 14, 13, 10);
-  fill(ctx, '#557b66', x - 4, y - 13, 10, 5);
-  fill(ctx, '#c38256', x - 8, y - 12 + gait, 3, 5);
-  fill(ctx, '#c38256', x + 6, y - 12 - gait, 3, 5);
-  fill(ctx, '#d79765', x - 4, y - 20, 9, 7);
-  if (facing !== 'up') fill(ctx, '#4c3c32', x + (facing === 'left' ? -3 : 2), y - 17, 2, 2);
-  fill(ctx, '#704e3d', x - 8, y - 22, 17, 4);
-  fill(ctx, '#d4ac63', x - 8, y - 23, 17, 2);
-  fill(ctx, '#f1cf87', x - 5, y - 26, 11, 4);
-  fill(ctx, '#aa714c', x - 5, y - 23, 11, 1);
-}
-
-export function drawGarden(ctx, terrain, camera, player, plants, nearest, hasSeed, time) {
-  ctx.imageSmoothingEnabled = false;
+function waterSoil(ctx, x, y, progress) {
+  const radius = 3 + Math.sqrt(progress) * 14;
+  const wash = ctx.createRadialGradient(x, y, 0, x, y, radius);
+  wash.addColorStop(0, '#684d60');
+  wash.addColorStop(.67, '#8a7778');
+  wash.addColorStop(1, '#8a777800');
   ctx.save();
-  ctx.translate(-Math.round(camera.x), -Math.round(camera.y));
-  ctx.drawImage(terrain, 0, 0);
-  const wave = Math.floor(time / 420) % 5;
-  for (const [dx, dy] of [[-50, -5], [3, -30], [36, -18], [16, 16], [-20, 35], [58, 5]]) {
-    fill(ctx, '#90b7a1', pond.x + dx + wave, pond.y + dy, 8 - wave, 1);
-    fill(ctx, '#48786e', pond.x + dx + 9, pond.y + dy + 4, 5 + wave, 1);
+  ctx.globalAlpha = Math.sin(Math.PI * progress) * .7;
+  ellipse(ctx, x, y, radius, 2 + progress * 5, wash);
+  ctx.restore();
+}
+
+function drawPlant(ctx, x, y, planted) {
+  const stage = Math.min(3, planted.waters ?? 0);
+  if (stage === 0) {
+    ellipse(ctx, x, y, 4, 2.5, '#d0a56e', '#70543c', -.48);
+    return;
+  }
+  const height = 5 + stage * 4;
+  line(ctx, [[x, y], [x - .5, y - height / 2], [x + 1, y - height]], ink);
+  ellipse(ctx, x - 4, y - 5, 4.7, 2.1, '#8aa578', ink, .38);
+  ellipse(ctx, x + 4, y - 8, 4.4, 2.1, '#a4b986', ink, -.51);
+  if (stage > 1) ellipse(ctx, x - 3, y - 12, 3.7, 1.7, '#8ca678', ink, .43);
+  if (stage === 3) {
+    const color = bloomColors[planted.intention] ?? bloomColors.health;
+    for (let petal = 0; petal < 5; petal += 1) {
+      const angle = petal * Math.PI * 2 / 5 - Math.PI / 2;
+      ellipse(ctx, x + 1 + Math.cos(angle) * 3.2, y - height + Math.sin(angle) * 3.2, 3.6, 2.7, color, '#896654', angle);
+    }
+    ellipse(ctx, x + 1, y - height, 2.1, 2.1, '#d3a759', '#896654');
+  }
+}
+
+function drawBed(ctx, plot, planted, nearby, canPlant, wash) {
+  const { x, y } = plot;
+  ellipse(ctx, x + 1, y + 9, 21, 5, '#6b754741');
+  box(ctx, x - 20, y - 12, 40, 24, 2, '#c29d78', '#6f604b');
+  const soil = ctx.createLinearGradient(0, y - 9, 0, y + 10);
+  soil.addColorStop(0, planted?.waters ? '#90735c' : '#a88967');
+  soil.addColorStop(1, planted?.waters ? '#a5896f' : '#c0a17c');
+  box(ctx, x - 17, y - 9, 34, 17, 1, soil);
+  for (const dy of [-5, 0, 5]) line(ctx, [[x - 15, y + dy], [x - 2, y + dy + .6], [x + 14, y + dy]], '#725c4b45', .8);
+  if (wash > 0 && wash < 1) waterSoil(ctx, x, y, wash);
+  if (planted) drawPlant(ctx, x, y + 1, planted);
+  else if (canPlant) {
+    line(ctx, [[x - 3, y], [x + 3, y]], '#f9ecd1', 1.6);
+    line(ctx, [[x, y - 3], [x, y + 3]], '#f9ecd1', 1.6);
+  }
+  if (nearby) outlineTarget(ctx, x, y, 44, 29);
+}
+
+function outlineTarget(ctx, x, y, width, height) {
+  ctx.beginPath();
+  ctx.roundRect(x - width / 2, y - height / 2, width, height, 3);
+  ctx.strokeStyle = '#2f4d36';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.strokeStyle = '#faf2d6';
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+}
+
+function drawGardener(ctx, player, time) {
+  const { x, y, facing, moving } = player;
+  const gait = moving && time ? Math.sin(time / 85) * 1.4 : 0;
+  ellipse(ctx, x + 1, y + 1, 9, 3.4, '#58664752');
+  line(ctx, [[x - 3, y - 6], [x - 3, y - 1 + gait]], '#55493d', 3);
+  line(ctx, [[x + 3, y - 6], [x + 3, y - 1 - gait]], '#55493d', 3);
+  box(ctx, x - 6, y - 14, 12, 10, 3, '#6e886c', ink);
+  ellipse(ctx, x, y - 17, 4.5, 4.7, '#bd8966', '#6b513e');
+  if (facing !== 'up') {
+    const eye = facing === 'left' ? -2 : facing === 'right' ? 2 : 0;
+    ellipse(ctx, x + eye, y - 16.5, .7, .7, '#4d4139');
+  }
+  ellipse(ctx, x, y - 20.5, 8.7, 2.7, '#d8b97d', '#6a563d');
+  ellipse(ctx, x - .5, y - 23, 5.3, 3.3, '#e5cb91', '#725b40');
+}
+
+export function drawGarden(ctx, terrain, camera, player, { plants, nearest, canPlant, time, watering }) {
+  ctx.save();
+  ctx.translate(-camera.x, -camera.y);
+  ctx.drawImage(terrain, 0, 0, worldSize.width, worldSize.height);
+  const ripple = time ? (Math.sin(time / 730) + 1) / 2 : .5;
+  for (const [dx, dy] of [[-48, -8], [1, -29], [34, -16], [14, 15], [-20, 34], [58, 5]]) {
+    const x = pond.x + dx + ripple * 2;
+    const y = pond.y + dy;
+    line(ctx, [[x, y], [x + 7, y - .5], [x + 12 - ripple * 2, y]], '#e8ebc878', .9);
   }
   for (const plot of gardenPlots) {
-    drawBed(ctx, plot, plants.get(plot.number), plot === nearest, hasSeed);
+    const wash = plot.number === watering?.plot ? (time - watering.startedAt) / 1050 : 0;
+    drawBed(ctx, plot, plants.get(plot.number), plot === nearest, canPlant, wash);
   }
-  if (nearest === journalBench) {
-    ctx.strokeStyle = '#fff0aa';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(journalBench.x - 22, journalBench.y - 13, 44, 24);
-  }
-  avatar(ctx, player, time);
+  if (nearest === journalBench) outlineTarget(ctx, journalBench.x, journalBench.y - 1, 44, 24);
+  drawGardener(ctx, player, time);
   ctx.restore();
 }
