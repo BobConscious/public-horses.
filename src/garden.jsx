@@ -4,9 +4,10 @@ import { fields } from '../shared/catalog.js';
 import { useApi } from './http.js';
 import { Button, Field } from './components/controls.jsx';
 import { ErrorNotice, kindName } from './ui.jsx';
+import GardenWorld from './garden-world.jsx';
+import { gardenPlots } from './garden-world-layout.js';
 import './garden.css';
 
-const plotNumbers = Array.from({ length: 12 }, (_, index) => index + 1);
 const stages = ['Seed', 'Sprout', 'First leaves', 'In bloom'];
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
 
@@ -79,7 +80,55 @@ function Plot({ number, seed, selectedSeed, inspected, busy, onInspect, onPlant 
   );
 }
 
+function WateringPractice({ seed, busy, onCancel, onWater }) {
+  const [rejoice, setRejoice] = useState(false);
+  const dialog = useRef(null);
+  const heading = useRef(null);
+
+  useEffect(() => {
+    const panel = dialog.current;
+    panel.showModal();
+    return () => panel.close();
+  }, []);
+
+  useEffect(() => { heading.current?.focus(); }, [rejoice]);
+
+  function cancel(event) {
+    event.preventDefault();
+    if (!busy) onCancel();
+  }
+
+  return (
+    <dialog ref={dialog} className="garden-watering" aria-labelledby="garden-watering-title" onCancel={cancel}>
+      <p className="garden-watering__step"><Droplet size={16} aria-hidden="true" /> Watering · {rejoice ? '2 of 2' : '1 of 2'}</p>
+      <h2 id="garden-watering-title" ref={heading} tabIndex={-1}>{rejoice ? 'Rejoice in the good you did' : 'Remember emptiness'}</h2>
+      <div className="garden-watering__act">
+        <strong>{seed.projectTitle}</strong>
+        {seed.note && <p>{seed.note}</p>}
+      </div>
+      {rejoice ? (
+        <>
+          <p>Remember who was there and what you gave. Take a moment to feel grateful and rejoice in the good you did.</p>
+          <p>This is the act you’re watering.</p>
+        </>
+      ) : (
+        <>
+          <p>In this practice, emptiness means things have no fixed nature of their own. They arise through causes and conditions.</p>
+          <p>Recall the causes and conditions that made this act possible. What seed did you plant for the world you want to be part of?</p>
+        </>
+      )}
+      <div className="form-actions garden-watering__actions">
+        {rejoice ? <Button onClick={onWater} disabled={busy}>{busy ? 'Watering…' : 'Water this seed'}</Button>
+          : <Button onClick={() => setRejoice(true)}>Continue to rejoicing</Button>}
+        {rejoice && <Button variant="outline" onClick={() => setRejoice(false)} disabled={busy}>Back</Button>}
+        <Button variant="plain" onClick={onCancel} disabled={busy}>Cancel</Button>
+      </div>
+    </dialog>
+  );
+}
+
 function PlantDetails({ seed, busy, headingRef, onWater, onHarvest }) {
+  const [practicing, setPracticing] = useState(false);
   const [today, setToday] = useState(() => dayKey(Date.now()));
   useEffect(() => {
     const interval = setInterval(() => setToday(dayKey(Date.now())), 60_000);
@@ -110,14 +159,18 @@ function PlantDetails({ seed, busy, headingRef, onWater, onHarvest }) {
           <button
             className="garden-button garden-button--solid"
             type="button"
-            onClick={() => { if (!busy && !wateredToday) onWater(); }}
+            onClick={() => { if (!busy && !wateredToday) setPracticing(true); }}
             aria-disabled={busy || wateredToday}
           >
-            <Droplet size={17} aria-hidden="true" /> {wateredToday ? 'Watered today' : 'Water this plant'}
+            <Droplet size={17} aria-hidden="true" /> {wateredToday ? 'Watered today' : 'Water this seed'}
           </button>
           {wateredToday && <p className="garden-help">Water again after midnight UTC.</p>}
         </>
       )}
+      {practicing && <WateringPractice seed={seed} busy={busy} onCancel={() => setPracticing(false)} onWater={async () => {
+        await onWater();
+        setPracticing(false);
+      }} />}
     </section>
   );
 }
@@ -133,7 +186,7 @@ function SeedPouch({ seeds, selectedId, full, busy, headingRef, onPick }) {
       {seeds.length > 0 ? (
         <>
           <p className="garden-help">
-            {full ? 'Harvest a plant to make room for another seed.' : 'Choose a seed, then select an empty plot.'}
+            {full ? 'Harvest a plant to make room for another seed.' : 'Choose a seed, then go to an empty plot.'}
           </p>
           <ul className="garden-pouch__list">
             {seeds.map((seed) => (
@@ -153,12 +206,7 @@ function SeedPouch({ seeds, selectedId, full, busy, headingRef, onPick }) {
             ))}
           </ul>
         </>
-      ) : (
-        <>
-          <p className="garden-help">Record an act of service to add a seed.</p>
-          <a className="garden-text-link" href="/#projects">Find a way to serve <ArrowRight size={15} aria-hidden="true" /></a>
-        </>
-      )}
+      ) : <p className="garden-help">Record an act of service to add a seed.</p>}
     </section>
   );
 }
@@ -229,22 +277,27 @@ function JournalEntry({ seed, onSave }) {
 }
 
 function ServiceJournal({ seeds, onSave }) {
-  if (!seeds.length) return null;
+  const journal = useRef(null);
+
+  useEffect(() => {
+    if (window.location.hash === '#service-journal') journal.current?.focus();
+  }, []);
+
   return (
-    <section id="service-journal" tabIndex={-1} className="garden-journal" aria-labelledby="garden-journal-title">
+    <section ref={journal} id="service-journal" tabIndex={-1} className="garden-journal" aria-labelledby="garden-journal-title">
       <div className="garden-panel__heading">
         <span className="garden-panel__icon"><BookOpen size={18} aria-hidden="true" /></span>
         <h2 id="garden-journal-title">Service journal</h2>
       </div>
       <p className="garden-help">Return to an act of service and reflect on what you notice over time.</p>
-      <ul className="garden-journal__entries">
+      {seeds.length === 0 ? <p className="garden-help">Record an act of service to start your journal.</p> : <ul className="garden-journal__entries">
         {seeds.map((seed) => <JournalEntry key={seed.id} seed={seed} onSave={onSave} />)}
-      </ul>
+      </ul>}
     </section>
   );
 }
 
-function MemberGarden() {
+function MemberGarden({ boardHref }) {
   const api = useApi();
   const [seeds, setSeeds] = useState(null);
   const [loadError, setLoadError] = useState('');
@@ -254,6 +307,8 @@ function MemberGarden() {
   const [status, setStatus] = useState('');
   const [actionError, setActionError] = useState('');
   const [busy, setBusy] = useState(false);
+  const updating = useRef(false);
+  const canvasRef = useRef(null);
   const plotsRef = useRef(null);
   const plantHeading = useRef(null);
   const pouchHeading = useRef(null);
@@ -275,7 +330,13 @@ function MemberGarden() {
   useEffect(() => {
     if (busy || !nextFocus.current) return;
     if (nextFocus.current === 'plot') {
-      plotsRef.current?.querySelector('.garden-plot--empty:not(:disabled)')?.focus();
+      const list = plotsRef.current;
+      if (list && (list.open || !canvasRef.current)) {
+        list.open = true;
+        list.querySelector('.garden-plot--empty:not(:disabled)')?.focus();
+      } else {
+        canvasRef.current?.focus();
+      }
     } else if (nextFocus.current === 'plant') {
       plantHeading.current?.focus();
     } else {
@@ -311,6 +372,8 @@ function MemberGarden() {
   }
 
   async function updateSeed(seedId, action, body, message) {
+    if (updating.current) return null;
+    updating.current = true;
     setBusy(true);
     setActionError('');
     setStatus('');
@@ -323,6 +386,7 @@ function MemberGarden() {
       setActionError(error.message);
       return null;
     } finally {
+      updating.current = false;
       setBusy(false);
     }
   }
@@ -364,73 +428,92 @@ function MemberGarden() {
     }
   }
 
+  function usePlot(number) {
+    const seed = seedsByPlot.get(number);
+    if (seed) inspect(seed.id);
+    else if (selectedSeed) plant(number);
+    else pouchHeading.current?.focus();
+  }
+
+  function openJournal() {
+    const journal = document.getElementById('service-journal');
+    journal?.focus({ preventScroll: true });
+    journal?.scrollIntoView({ block: 'start' });
+  }
+
   return (
     <>
-      {seeds.length > 0 && <a className="garden-text-link garden-journal-link" href="#service-journal">
-        Open service journal <ArrowRight size={15} aria-hidden="true" />
-      </a>}
+      <div className="garden-actions">
+        <a className="garden-text-link" href="#service-journal">
+          Open service journal <ArrowRight size={15} aria-hidden="true" />
+        </a>
+        <a className="garden-text-link" href={boardHref}>Find a way to serve <ArrowRight size={15} aria-hidden="true" /></a>
+      </div>
       <div className="garden-layout">
+        <section className="garden-beds" aria-labelledby="garden-beds-title">
+          <header className="garden-beds__header">
+            <h2 id="garden-beds-title">Garden beds</h2>
+            <span>{planted.length} of {gardenPlots.length} planted</span>
+          </header>
+          <GardenWorld canvasRef={canvasRef} plants={seedsByPlot} selectedSeed={selectedSeed}
+            onPlot={usePlot} onJournal={openJournal} busy={busy} />
+          <div className="garden-beds__foot">
+            {actionError && <p role="alert" className="garden-feedback garden-feedback--error">{actionError}</p>}
+            <p role="status" className="garden-feedback">{status}</p>
+            {!status && !actionError && selectedSeed && <p className="garden-help">Go to an empty plot to plant this seed.</p>}
+          </div>
+          <details className="garden-plot-list" ref={plotsRef}>
+            <summary>Garden plot list</summary>
+            <div className="garden-beds__plots">
+              {gardenPlots.map(({ number }) => (
+                <Plot
+                  key={number}
+                  number={number}
+                  seed={seedsByPlot.get(number)}
+                  selectedSeed={selectedSeed}
+                  inspected={inspected?.plot === number}
+                  busy={busy}
+                  onInspect={inspect}
+                  onPlant={plant}
+                />
+              ))}
+            </div>
+          </details>
+        </section>
         <aside className="garden-sidebar" aria-label="Garden tools">
           {inspected && <PlantDetails
             seed={inspected}
             busy={busy}
             headingRef={plantHeading}
-            onWater={() => updateSeed(inspected.id, 'water', {}, 'Plant watered.')}
+            onWater={() => updateSeed(inspected.id, 'water', {}, 'Seed watered.')}
             onHarvest={harvest}
           />}
           <SeedPouch
             seeds={unplanted}
             selectedId={selectedSeedId}
-            full={planted.length === plotNumbers.length}
+            full={planted.length === gardenPlots.length}
             busy={busy}
             headingRef={pouchHeading}
             onPick={pick}
           />
         </aside>
-        <section className="garden-beds" aria-labelledby="garden-beds-title">
-          <header className="garden-beds__header">
-            <h2 id="garden-beds-title">Garden beds</h2>
-            <span>{planted.length} of {plotNumbers.length} planted</span>
-          </header>
-          <div className="garden-beds__plots" ref={plotsRef}>
-            {plotNumbers.map((number) => (
-              <Plot
-                key={number}
-                number={number}
-                seed={seedsByPlot.get(number)}
-                selectedSeed={selectedSeed}
-                inspected={inspected?.plot === number}
-                busy={busy}
-                onInspect={inspect}
-                onPlant={plant}
-              />
-            ))}
-          </div>
-          <div className="garden-beds__foot">
-            {actionError && <p role="alert" className="garden-feedback garden-feedback--error">{actionError}</p>}
-            <p role="status" className="garden-feedback">{status}</p>
-            {!status && !actionError && <p className="garden-help">
-              {selectedSeed ? 'Choose an empty plot for this seed.' : 'Water a plant on three different days before you can harvest it.'}
-            </p>}
-          </div>
-        </section>
       </div>
       <ServiceJournal seeds={seeds} onSave={saveObservation} />
     </>
   );
 }
 
-export default function Garden({ user }) {
+export default function Garden({ user, boardHref = '/#projects' }) {
   return (
-    <main className="garden-page" id="main">
+    <main className="garden-page" data-member={Boolean(user)} id="main" tabIndex={-1}>
       <header className="garden-header">
         <div>
-          <h1>Your garden</h1>
-          <p>Each act you record gives you a seed. Come back to reflect on what you notice.</p>
+          <h1>My garden</h1>
+          <p>We become gardeners of our own minds. Each act of service plants a karmic seed for the world we want to be part of.</p>
         </div>
         <span className="garden-privacy"><LockKeyhole size={15} aria-hidden="true" /> Private</span>
       </header>
-      {user ? <MemberGarden key={user.id} /> : (
+      {user ? <MemberGarden key={user.id} boardHref={boardHref} /> : (
         <GardenNotice icon={Sprout} title="Sign in to see your garden">
           <a className="garden-button garden-button--solid" href="/sign-in?next=%2Fgarden">Sign in <ArrowRight size={16} aria-hidden="true" /></a>
         </GardenNotice>
