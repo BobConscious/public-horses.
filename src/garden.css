@@ -6,7 +6,7 @@
   --garden-green: #345143;
   --garden-clay: #986c55;
   --garden-serif: var(--font-display, var(--font-serif, Georgia, serif));
-  width: min(1120px, calc(100% - 48px));
+  width: min(1240px, calc(100% - 48px));
   margin-inline: auto;
   padding-block: clamp(2.75rem, 6vw, 5rem) 5rem;
   color: var(--garden-ink);
@@ -60,10 +60,16 @@
   white-space: nowrap;
 }
 
+.garden-page[data-member='true'] { padding-top: clamp(1.35rem, 3vw, 2.6rem); }
+.garden-page[data-member='true'] .garden-header { min-height: 0; margin-bottom: 1rem; padding: 0 0 1.1rem; }
+.garden-page[data-member='true'] .garden-header::after { content: none; }
+.garden-page[data-member='true'] .garden-header h1 { font-size: clamp(2.8rem, 5vw, 4.5rem); }
+.garden-page[data-member='true'] .garden-header p { max-width: 55ch; margin-top: .55rem; }
+
 .garden-layout {
   display: grid;
   grid-template-areas: 'beds tools';
-  grid-template-columns: minmax(0, 1fr) minmax(238px, 310px);
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 280px);
   align-items: start;
   gap: 1.2rem;
 }
@@ -76,6 +82,68 @@
   border-radius: var(--radius-panel);
   background: #e9ead8;
 }
+
+.garden-world {
+  overflow: hidden;
+  border: 1px solid #3e5944;
+  border-radius: var(--radius-panel);
+  background: #203c2c;
+  color: #fbf4df;
+}
+
+.garden-world canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 480 / 270;
+  background: #c6cda1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.garden-world canvas:focus-visible { outline: 3px solid #fff0aa; outline-offset: -4px; }
+
+.garden-world-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .65rem 1rem;
+  padding: .75rem .85rem;
+  border-top: 1px solid #7a8761;
+}
+
+.garden-world-controls p { margin: 0; font-size: .82rem; }
+.garden-world-controls p:first-child { display: flex; align-items: center; gap: .4rem; color: #d8e4ca; }
+.garden-world-controls svg { flex: 0 0 auto; }
+.garden-world-controls p[role='status'] { margin-top: .15rem; }
+.garden-world-controls .button { color: #fff7e5; border-color: #899e83; }
+.garden-world-controls .button:not(:disabled):hover { color: #172e22; background: #ecedda; }
+.garden-world-controls .button:disabled { opacity: .58; }
+.garden-world-unavailable { color: var(--garden-muted); }
+
+.garden-watering {
+  width: min(530px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: clamp(21px, 5vw, 34px);
+  color: var(--garden-ink);
+  background: var(--garden-paper);
+  border: 1px solid #9da58a;
+  border-radius: var(--radius-panel);
+  box-shadow: 0 18px 70px #15312b55;
+}
+
+.garden-watering::backdrop { background: #14291dd4; }
+.garden-watering h2 { font: 500 clamp(2rem, 5vw, 2.75rem)/1.05 var(--garden-serif); letter-spacing: -.045em; margin: .5rem 0 1.1rem; }
+.garden-watering > p { margin: .8rem 0; color: var(--garden-muted); }
+.garden-watering .garden-watering__step { margin: 0; display: flex; align-items: center; gap: .4rem; color: var(--garden-green); font-size: .85rem; font-weight: 650; }
+.garden-watering__act { background: #ebeddd; border-left: 2px solid #91a378; border-radius: 0 8px 8px 0; padding: .75rem .85rem; }
+.garden-watering__act p { margin: .25rem 0 0; color: var(--garden-muted); }
+.garden-watering__actions { margin-top: 1.25rem; }
+
+.garden-plot-list { margin-top: .6rem; }
+.garden-plot-list summary { width: fit-content; color: var(--garden-green); font-size: .88rem; font-weight: 650; cursor: pointer; }
+.garden-plot-list .garden-beds__plots { margin-top: .75rem; }
 
 .garden-beds__header {
   display: flex;
@@ -472,7 +540,7 @@
   scroll-margin-top: 12px;
 }
 
-.garden-journal-link { margin-bottom: .75rem; }
+.garden-actions { display: flex; flex-wrap: wrap; gap: 0 1rem; margin-bottom: .75rem; }
 
 .garden-journal__entries {
   display: grid;
@@ -635,7 +703,8 @@
 
 @media (max-width: 650px) {
   .garden-page { width: calc(100% - 30px); }
-  .garden-layout { grid-template-areas: 'tools' 'beds'; grid-template-columns: minmax(0, 1fr); }
+  .garden-layout { grid-template-areas: 'beds' 'tools'; grid-template-columns: minmax(0, 1fr); }
+  .garden-world canvas { aspect-ratio: 276 / 222; }
   .garden-header { min-height: 204px; }
   .garden-header::after { width: 52%; opacity: .54; }
   .garden-header p { max-width: 24ch; }
