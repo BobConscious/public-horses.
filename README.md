@@ -1,6 +1,8 @@
 # Public Horses
 
-Public Horses is a service board. Post a specific way to help or find an opportunity you can fulfill. Record your service and reflect on it in a private garden. A member can post and fulfill opportunities with one account.
+Public Horses is the Buddhist volunteer platform. Where service is a practice.
+
+Post a specific way to help or find an opportunity you can fulfill. Record your service and reflect on it in a private garden. A member can post and fulfill opportunities with one account.
 
 ## Mission and team
 
@@ -21,7 +23,7 @@ npm ci
 npm run demo
 ```
 
-Open [the local demo](http://127.0.0.1:4173). It uses five example listings and its own database. The listings include a volunteer request, a monthly event, and a fictional personal profile. Create two local accounts to rehearse organizer and reviewer roles.
+Open [the local demo](http://127.0.0.1:4173). It uses six example listings and its own database. The listings include help setting up a chair yoga class and a monthly meditation. Create two local accounts to rehearse organizer and reviewer roles.
 
 ```sh
 npm run reviewer -- --demo reviewer@example.org
@@ -68,11 +70,11 @@ For hosting, set the exact HTTPS origin. Rehearse with development keys and use 
 
 ## How the marketplace works
 
-1. **Post.** Create a person or organization profile in the workspace. State the task, where and when to help, and what counts as complete. Provide an end date, official support links, and a private source for review.
+1. **Post.** Create an individual or organization profile in the workspace. State the task, where and when to help, and what counts as complete. Use **Who might enjoy this?** to describe what helps and whether beginners are welcome. Provide an end date, official support links, and a private source for review.
 2. **Review.** A separate reviewer checks the listing, profile, and any image. Approval makes that version public. Later profile edits stay private until a reviewer approves a listing that uses them. Expired and closed listings leave the directory.
-3. **Serve.** Find a specific need and respond through the organizer’s own channel. The organizer can mark the opportunity fulfilled once the help meets the need.
+3. **Serve.** Browse by list, swipe, or map. Swipe through up to five matches or use List to see all matches. Swipe right or use **Save** to add an opportunity to a shortlist in your browser. Use the organizer response link when you are ready. The organizer can mark the opportunity fulfilled once the help meets the need.
 4. **Record.** Sign in to record service you already gave and choose an intention. Use the direct link to record past service after the opportunity closes.
-5. **Reflect.** Each saved act gives you one private seed. You can plant it, water it once a day, and harvest after three waterings. Use the journal to record what you notice later.
+5. **Reflect.** Each recorded act gives you a private seed. Remember emptiness and rejoice in the good you and others did before watering it. You can water it once a day and harvest after three waterings. Use the journal to record what you notice later.
 
 [Kiva’s discovery and support flow](https://www.kiva.org/about/how) and [partner review](https://www.kiva.org/about/due-diligence/lending-partners) informed this structure. Public Horses records self-reported support and sends givers to the organizer.
 

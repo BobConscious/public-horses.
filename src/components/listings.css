@@ -22,6 +22,7 @@
 .search-box input:focus-visible { outline: 0; }
 .search-box button { display: grid; min-width: var(--control-min); min-height: var(--control-min); place-items: center; background: none; border: 0; }
 .search-box input::-webkit-search-cancel-button { display: none; }
+.catalog-controls .catalog-more-filters { display: none; }
 
 .catalog-type-label {
   display: grid;
@@ -75,8 +76,12 @@
   background: var(--paper);
   overflow-wrap: anywhere;
 }
-.project-card-type { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); margin-bottom: var(--space-3); color: var(--muted); font-size: var(--text-caption); }
-.project-card-type strong { color: var(--forest); font-weight: 700; }
+.project-card-meta { display: flex; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-3); font-size: var(--text-caption); }
+.project-card-seed { color: var(--muted); }
+.project-card-seed span { display: block; }
+.project-card-seed strong { display: flex; align-items: center; gap: var(--space-1); color: var(--forest); font-size: var(--text-control); }
+.project-card-seed svg { flex: 0 0 auto; }
+.project-card-type { max-width: 52%; text-align: end; color: var(--forest); font-weight: 650; }
 .project-card :is(h2, h3) { font-size: clamp(25px, 2.35vw, 33px); letter-spacing: -.036em; }
 .project-card-link {
   text-decoration: underline;
@@ -102,8 +107,87 @@
 .project-facts div { display: grid; grid-template-columns: minmax(85px, .37fr) minmax(0, 1fr); gap: var(--space-2); }
 .project-facts dt { font-weight: 650; }
 .project-facts dd { margin: 0; }
+.project-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: var(--space-4); }
+.project-card-actions .button { padding-inline: var(--space-3); }
+
+.swipe-deck { max-width: 560px; margin-inline: auto; }
+.swipe-navigation { display: flex; justify-content: space-between; align-items: center; gap: var(--space-1); margin-bottom: var(--space-2); }
+.swipe-navigation .button { gap: var(--space-1); padding-inline: var(--space-3); }
+.swipe-navigation .button[aria-disabled='true'] { opacity: .55; cursor: default; }
+.swipe-position, .swipe-hint, .swipe-feedback { color: var(--muted); font-size: var(--text-caption); text-align: center; }
+.swipe-position { font-variant-numeric: tabular-nums; }
+.swipe-cue { min-height: var(--space-6); margin-bottom: var(--space-2); }
+.swipe-hint { display: none; }
+.swipe-hint[data-ready='true'], .swipe-feedback { color: var(--forest); font-weight: 650; }
+.swipe-feedback { display: flex; justify-content: center; align-items: center; gap: var(--space-1); }
+.shortlist-save[data-saved='true'] { background: var(--sage); color: var(--forest-dark); }
+.swipe-track {
+  position: relative;
+  block-size: min(460px, 68svh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  touch-action: pan-y pinch-zoom;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--radius-panel);
+}
+.swipe-track > li { display: flex; min-height: 100%; padding: 3px; scroll-snap-align: start; scroll-snap-stop: always; }
+.swipe-track .project-card { width: 100%; transform: translateX(var(--swipe-offset, 0)); transition: transform var(--motion-control); }
+.swipe-dragging .project-card { transition: none; }
+.swipe-track:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.swipe-browse-all { display: flex; width: fit-content; margin: var(--space-2) auto 0; }
+
+.featured-opportunities {
+  padding-block: clamp(var(--space-4), 3.5vw, 42px) var(--space-6);
+  border-bottom: 1px solid var(--line);
+}
+.featured-opportunities-header, .featured-opportunities-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+.featured-opportunities-header { margin-bottom: var(--space-4); }
+.featured-opportunities-header h2 { font-size: clamp(27px, 3.1vw, 42px); letter-spacing: -.045em; }
+.featured-opportunities-actions .back-link { align-self: center; }
+.featured-opportunities-arrows { display: flex; gap: var(--space-2); }
+.featured-opportunities-arrows .button { padding-inline: 12px; }
+.featured-opportunities-arrows .button:disabled { cursor: default; }
+.featured-opportunities-strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(270px, 27%, 340px);
+  gap: var(--space-3);
+  margin: 0;
+  padding: 3px 2px var(--space-3);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 2px;
+  scrollbar-color: var(--control-border) transparent;
+  list-style: none;
+}
+.featured-opportunities-strip > li { display: flex; min-width: 0; scroll-snap-align: start; }
+.featured-opportunities-strip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.featured-opportunities-strip .project-card { width: 100%; padding: var(--space-4); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .featured-opportunities-strip { scroll-behavior: smooth; }
+}
+
+@media (any-pointer: coarse) {
+  .swipe-hint { display: block; }
+}
 
 @media (max-width: 770px) {
+  .catalog-controls-compact { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-2); }
+  .catalog-controls-compact .search-label { grid-column: 1 / -1; margin-bottom: 0; }
+  .catalog-controls-compact .catalog-more-filters { display: inline-flex; }
+  .catalog-controls-compact .catalog-filter-fields { grid-column: 1 / -1; }
+  .catalog-controls-compact .catalog-filter-fields[data-expanded='false'] { display: none; }
   .field-filters { margin-top: var(--space-4); }
   .field-options { display: flex; flex-wrap: wrap; column-gap: var(--space-2); }
   .field-filters button { border-left: 0; border-bottom: 2px solid transparent; }
@@ -112,4 +196,6 @@
 @media (max-width: 530px) {
   .field-options { column-gap: var(--space-1); }
   .field-filters button { padding-inline: var(--space-2); }
+  .featured-opportunities-actions { flex: 1; }
+  .featured-opportunities-strip { grid-auto-columns: 87%; }
 }

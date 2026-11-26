@@ -1,6 +1,8 @@
 # Public Horses brand kit
 
-Public Horses is a service board. Individuals and organizations post specific ways to help. Supporters fulfill opportunities through the organizer.
+Public Horses is the Buddhist volunteer platform. Where service is a practice.
+
+Individuals and organizations post specific ways to help. Supporters fulfill opportunities through the organizer.
 
 - **Name.** Use **Public Horses** in public copy. The shared village horse gives us an example of lifelong service.
 - **Short description.** Find a way to serve or post a service opportunity.

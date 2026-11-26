@@ -1,0 +1,30 @@
+.shortlist-dialog {
+  width: min(650px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-panel);
+  background: var(--cream);
+  color: var(--ink);
+  overscroll-behavior: contain;
+}
+
+.shortlist-dialog::backdrop { background: rgb(23 53 35 / 42%); }
+.shortlist-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: clamp(var(--space-4), 4vw, var(--space-6));
+  border-bottom: 1px solid var(--line);
+  background: var(--cream);
+}
+.shortlist-header h2 { font-size: clamp(30px, 6vw, 40px); letter-spacing: -.04em; }
+.shortlist-header h2:focus { outline: none; }
+.shortlist-header p { margin-top: var(--space-1); color: var(--muted); font-size: var(--text-control); }
+.shortlist-items { display: grid; gap: var(--space-3); padding: clamp(var(--space-4), 4vw, var(--space-6)); }
+.shortlist-unavailable { margin-top: var(--space-2); color: var(--muted); }

@@ -160,7 +160,7 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
     const view = {
       id: row.id, slug: row.slug, title: row.title, organization: profile.name, profile, location: row.location,
       summary: row.summary, story: row.story, field: row.field, endsAt: row.ends_at, listingType: link.listing_type,
-      completion: row.completion, fulfilledAt: row.fulfilled_at,
+      volunteerFit: row.volunteer_fit, completion: row.completion, fulfilledAt: row.fulfilled_at,
       schedule: link.schedule,
       mapLocation: findPlace(link.place_id),
       image: image ? { alt: image.alt, url: internal
@@ -222,11 +222,12 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
   function insertProject(data, owner, profile, { id = randomUUID(), slug = resourceSlug(data.title, id, 'project'),
     status = 'draft', version = 1, art = fieldArt[data.field] ?? '', demo = 0, image } = {}) {
     const stamp = now();
-    run(`INSERT INTO projects(id, slug, owner_id, title, organization, location, summary, story, completion, field, ends_at,
+    run(`INSERT INTO projects(id, slug, owner_id, title, organization, location, summary, story, volunteer_fit,
+          completion, field, ends_at,
           proof_url, status, version, art, demo, created_at, updated_at)
-        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, slug, owner, data.title,
-    profile.name, data.location, data.summary, data.story, data.completion ?? '', data.field, data.endsAt, data.proofUrl,
-    status, version, art, demo, stamp, stamp);
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, slug, owner, data.title,
+    profile.name, data.location, data.summary, data.story, data.volunteerFit ?? '', data.completion ?? '',
+    data.field, data.endsAt, data.proofUrl, status, version, art, demo, stamp, stamp);
     setProjectProfile(id, owner, profile, data.listingType, data.schedule);
     setProjectPlace(id, data.placeId);
     replaceNeeds(id, data.needs);
@@ -252,6 +253,7 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
     transaction(() => {
       db.exec(schema);
       const projectColumns = all('PRAGMA table_info(projects)').map(({ name }) => name);
+      if (!projectColumns.includes('volunteer_fit')) db.exec("ALTER TABLE projects ADD COLUMN volunteer_fit TEXT NOT NULL DEFAULT ''");
       if (!projectColumns.includes('completion')) db.exec("ALTER TABLE projects ADD COLUMN completion TEXT NOT NULL DEFAULT ''");
       if (!projectColumns.includes('fulfilled_at')) db.exec('ALTER TABLE projects ADD COLUMN fulfilled_at TEXT');
       if (!all('PRAGMA table_info(seeds)').some(({ name }) => name === 'reflection')) {
@@ -409,9 +411,10 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
         const data = projectInput({ listingType: link.listing_type, schedule: link.schedule, ...input }, on);
         const profile = selectProjectProfile(owner, data, row);
         run(`UPDATE projects SET title = ?, organization = ?, location = ?, summary = ?, story = ?,
-              completion = ?, field = ?, ends_at = ?, proof_url = ?, art = ?, updated_at = ?, version = version + 1 WHERE id = ?`,
-        data.title, profile.name, data.location, data.summary, data.story, data.completion ?? row.completion, data.field, data.endsAt,
-        data.proofUrl, fieldArt[data.field] ?? '', stamp, id);
+              volunteer_fit = ?, completion = ?, field = ?, ends_at = ?, proof_url = ?, art = ?, updated_at = ?,
+              version = version + 1 WHERE id = ?`,
+        data.title, profile.name, data.location, data.summary, data.story, data.volunteerFit ?? row.volunteer_fit,
+        data.completion ?? row.completion, data.field, data.endsAt, data.proofUrl, fieldArt[data.field] ?? '', stamp, id);
         setProjectProfile(id, owner, profile, data.listingType, data.schedule);
         setProjectPlace(id, data.placeId === undefined && data.location !== row.location ? null : data.placeId);
         replaceNeeds(id, data.needs);
@@ -544,6 +547,9 @@ export function createStore(dbPath, { clock = Date.now } = {}) {
           const data = projectInput(input, today(), { demo: true });
           const profile = demoProfile(inputProfile, data.organization);
           if (existing) {
+            if (data.volunteerFit !== undefined && data.volunteerFit !== existing.volunteer_fit) {
+              run('UPDATE projects SET volunteer_fit = ? WHERE id = ?', data.volunteerFit, id);
+            }
             setProjectProfile(id, demoOrganizer, profile, data.listingType, data.schedule);
             setProjectPlace(id, data.placeId ?? null);
             setProjectImage(id, demoImage);

@@ -121,7 +121,7 @@ function WateringPractice({ seed, busy, onClose, onWater, onWatered }) {
       </div>
       {rejoice ? (
         <>
-          <p>Remember who was there and what you gave. Take a moment to feel grateful and rejoice in the good you did.</p>
+          <p>Remember who was there and what you gave. Feel grateful and rejoice in the good you and others did.</p>
           <p>This is the act you’re watering.</p>
         </>
       ) : (

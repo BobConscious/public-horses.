@@ -1,13 +1,20 @@
 import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowUpRight, CircleCheck, List, MapPin } from 'lucide-react';
+import { ArrowLeft, ArrowUpDown, ArrowUpRight, Bookmark, CircleCheck, List, MapPin } from 'lucide-react';
 import { fields } from '../shared/catalog.js';
 import { useApi } from './http.js';
 import { signInLink } from './auth.jsx';
 import { Button, Field, Notice } from './components/controls.jsx';
-import { filterListings, initialListingFilters, ListingFilters, ProjectCards, ProjectOrganizer } from './components/listings.jsx';
+import { FeaturedOpportunities, filterListings, initialListingFilters, ListingFilters, ProjectCards, ProjectOrganizer, ShortlistToggle, SwipeOpportunities } from './components/listings.jsx';
+import { ShortlistDialog, useShortlist } from './shortlist.jsx';
 import { Deadline, EmptyProjects, ErrorNotice, LoadState, fieldName, kindName, listingTypeName, officialUrl, useLoad } from './ui.jsx';
 
 const ProjectMap = lazy(() => import('./components/project-map.jsx'));
+const directoryViews = [
+  { id: 'list', label: 'List', Icon: List },
+  { id: 'swipe', label: 'Swipe', Icon: ArrowUpDown },
+  { id: 'map', label: 'Map', Icon: MapPin },
+];
+const swipeLimit = 5;
 
 class MapBoundary extends Component {
   state = { failed: false };
@@ -21,19 +28,19 @@ class MapBoundary extends Component {
     return (
       <>
         <p className="notice" role="status">The map could not load. Browse the matching projects below.</p>
-        <ProjectCards projects={this.props.projects} />
+        <ProjectCards projects={this.props.projects} cardActions={this.props.cardActions} />
       </>
     );
   }
 }
 
-function MapResults({ projects }) {
+function MapResults({ projects, cardActions }) {
   const pinned = projects.filter(({ mapLocation }) => mapLocation);
   const unpinned = projects.filter(({ mapLocation }) => !mapLocation);
   return (
     <>
       {pinned.length > 0 ? (
-        <MapBoundary projects={pinned}>
+        <MapBoundary projects={pinned} cardActions={cardActions}>
           <Suspense fallback={<p className="loading" role="status">Loading map…</p>}>
             <ProjectMap projects={pinned} />
           </Suspense>
@@ -42,7 +49,7 @@ function MapResults({ projects }) {
       {unpinned.length > 0 && (
         <section className="unmapped-listings" aria-labelledby="unmapped-heading">
           <h2 id="unmapped-heading">Listings without pins</h2>
-          <ProjectCards projects={unpinned} heading="h3" />
+          <ProjectCards projects={unpinned} heading="h3" cardActions={cardActions} />
         </section>
       )}
     </>
@@ -52,9 +59,17 @@ function MapResults({ projects }) {
 export function HomePage() {
   const load = useLoad('/projects');
   const [filters, setFilters] = useState(initialListingFilters);
-  const [view, setView] = useState(() => new URLSearchParams(window.location.search).get('view') === 'map' ? 'map' : 'list');
+  const [view, setView] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('view');
+    return directoryViews.some(({ id }) => id === requested) ? requested : 'list';
+  });
   const [city, setCity] = useState(() => new URLSearchParams(window.location.search).get('city') ?? '');
   const directory = useRef(null);
+  const shortlistButton = useRef(null);
+  const shortlist = useShortlist();
+  const [shortlistOpen, setShortlistOpen] = useState(() => new URLSearchParams(window.location.search).get('shortlist') === '1');
+  const savedIds = new Set(shortlist.entries.map(({ id }) => id));
+  const savedCount = savedIds.size;
   const projects = load.data?.projects ?? [];
   const cities = [...new Map(projects.filter(({ mapLocation }) => mapLocation)
     .map(({ mapLocation }) => [mapLocation.id, mapLocation.label])).entries()]
@@ -62,20 +77,52 @@ export function HomePage() {
   const selectedCity = cities.some(([id]) => id === city) ? city : '';
   const filtered = Boolean(selectedCity || filters.query.trim() || filters.field !== 'all' || filters.type !== 'all');
   const matches = filterListings(projects, filters).filter(({ mapLocation }) => !selectedCity || mapLocation?.id === selectedCity);
+  const swipeProjects = view === 'swipe' ? matches.slice(0, swipeLimit) : [];
 
   useEffect(() => {
     if (window.location.hash === '#projects') directory.current?.scrollIntoView();
-  }, []);
+  }, [load.data]);
 
   function setDirectoryView(nextView, nextCity) {
     setView(nextView);
     setCity(nextCity);
     const url = new URL(window.location.href);
-    if (nextView === 'map') url.searchParams.set('view', 'map');
-    else url.searchParams.delete('view');
+    if (nextView === 'list') url.searchParams.delete('view');
+    else url.searchParams.set('view', nextView);
     if (nextCity) url.searchParams.set('city', nextCity);
     else url.searchParams.delete('city');
+    url.hash = 'projects';
     window.history.replaceState(window.history.state, '', url);
+  }
+
+  function changeView(nextView) {
+    if (nextView === view) return;
+    setDirectoryView(nextView, selectedCity);
+    directory.current?.scrollIntoView();
+  }
+
+  function browseAll() {
+    changeView('list');
+    directory.current?.focus({ preventScroll: true });
+  }
+
+  function showShortlist(open) {
+    setShortlistOpen(open);
+    const url = new URL(window.location.href);
+    if (open) {
+      url.searchParams.set('shortlist', '1');
+      url.hash = 'projects';
+    } else {
+      url.searchParams.delete('shortlist');
+    }
+    window.history.replaceState(window.history.state, '', url);
+    if (!open) shortlistButton.current?.focus({ preventScroll: true });
+  }
+
+  function saveAction(project) {
+    const saved = savedIds.has(project.id);
+    return <ShortlistToggle project={project} saved={saved}
+      onToggle={() => saved ? shortlist.remove(project.id) : shortlist.save(project)} />;
   }
 
   return (
@@ -83,17 +130,35 @@ export function HomePage() {
       <section className="garden-entrance" aria-labelledby="home-heading">
         <img className="garden-entrance-art" src="/art/flower-garden.jpg" alt="" width="1200" height="801" fetchPriority="high" />
         <div className="garden-entrance-copy container">
-          <h1 id="home-heading">A board for service</h1>
-          <p>In the Public Horse story, a village pooled money for a horse anyone could use. Find or share opportunities for a lifetime of service.</p>
+          <p className="garden-entrance-identity">The Buddhist volunteer platform</p>
+          <h1 id="home-heading">Where service is a practice</h1>
+          <p>Find a way to help or post a request for your community. After you serve, plant a seed in your private garden.</p>
           <div className="service-board-actions">
             <Button href="#projects">Find a way to serve</Button>
             <Button variant="outline" href="/workspace">Post a service opportunity</Button>
           </div>
         </div>
       </section>
+      <FeaturedOpportunities projects={projects} />
       <section id="projects" ref={directory} className="catalog-section container" aria-label="Service opportunities" tabIndex={-1}>
+        {load.data && <div className="catalog-toolbar">
+          <div className="catalog-view" role="group" aria-label="Directory view">
+            {directoryViews.map(({ id, label, Icon }) => (
+              <Button key={id} variant="plain" aria-pressed={view === id} aria-controls="catalog-results"
+                onClick={() => changeView(id)}>
+                <Icon size={16} aria-hidden="true" /> {label}
+              </Button>
+            ))}
+          </div>
+          <p className="result-count" role="status">{matches.length} {matches.length === 1 ? 'listing' : 'listings'}</p>
+          <Button ref={shortlistButton} variant="outline" className="catalog-shortlist" aria-haspopup="dialog"
+            aria-label={savedCount ? `Shortlist, ${savedCount} saved` : 'Shortlist'} onClick={() => showShortlist(true)}>
+            <Bookmark size={17} aria-hidden="true" /> Shortlist
+            {savedCount > 0 && <span className="shortlist-count">{savedCount}</span>}
+          </Button>
+        </div>}
         <div className="catalog-layout">
-          <ListingFilters filters={filters} onChange={setFilters}>
+          <ListingFilters filters={filters} onChange={setFilters} compact={view === 'swipe'}>
             {cities.length > 0 && <div className="catalog-city">
               <Field as="select" label="City" value={selectedCity}
                 onChange={(event) => setDirectoryView(view, event.target.value)}>
@@ -102,29 +167,22 @@ export function HomePage() {
               </Field>
             </div>}
           </ListingFilters>
-          <div className="catalog-results">
-            {!load.data ? <LoadState state={load} /> : (
-              <>
-                <div className="catalog-toolbar">
-                  <p className="result-count" role="status">{matches.length} {matches.length === 1 ? 'listing' : 'listings'}</p>
-                  <div className="catalog-view" role="group" aria-label="Directory view">
-                    <Button variant="outline" aria-pressed={view === 'list'} onClick={() => setDirectoryView('list', selectedCity)}>
-                      <List size={17} aria-hidden="true" /> List
-                    </Button>
-                    <Button variant="outline" aria-pressed={view === 'map'} onClick={() => setDirectoryView('map', selectedCity)}>
-                      <MapPin size={17} aria-hidden="true" /> Map
-                    </Button>
-                  </div>
-                </div>
-                {matches.length === 0 ? <EmptyProjects filtered={filtered} onReset={() => {
-                  setFilters(initialListingFilters);
-                  setDirectoryView(view, '');
-                }} /> : view === 'map' ? <MapResults projects={matches} /> : <ProjectCards projects={matches} />}
-              </>
-            )}
+          <div id="catalog-results" className="catalog-results">
+            {!load.data ? <LoadState state={load} /> : matches.length === 0 ? (
+              <EmptyProjects filtered={filtered} onReset={() => {
+                setFilters(initialListingFilters);
+                setDirectoryView(view, '');
+              }} />
+            ) : view === 'map' ? <MapResults projects={matches} cardActions={saveAction} /> : view === 'swipe' ? (
+              <SwipeOpportunities key={swipeProjects.map(({ id }) => id).join(',')} projects={swipeProjects} savedIds={savedIds}
+                onSave={shortlist.save} onRemove={shortlist.remove}
+                onBrowseAll={matches.length > swipeLimit ? browseAll : undefined} />
+            ) : <ProjectCards projects={matches} cardActions={saveAction} />}
           </div>
         </div>
       </section>
+      {shortlistOpen && <ShortlistDialog entries={shortlist.entries} stored={shortlist.stored} load={load}
+        onRemove={shortlist.remove} onClose={() => showShortlist(false)} />}
     </>
   );
 }
@@ -250,9 +308,14 @@ function SupportForm({ project, user }) {
 export function ProjectPage({ slug, user, sessionReady }) {
   const load = useLoad(`/projects/${encodeURIComponent(slug)}`);
   const project = load.data?.project;
+  const shortlist = useShortlist();
+  const saved = shortlist.entries.some(({ id }) => id === project?.id);
+  const fromShortlist = new URLSearchParams(window.location.search).get('from') === 'shortlist';
   return (
     <div className="detail-page container">
-      <a href="/#projects" className="back-link"><ArrowLeft size={17} aria-hidden="true" /> Service board</a>
+      <a href={fromShortlist ? '/?shortlist=1#projects' : '/#projects'} className="back-link">
+        <ArrowLeft size={17} aria-hidden="true" /> {fromShortlist ? 'Back to shortlist' : 'Service board'}
+      </a>
       {!project ? <LoadState state={load} /> : (
         <>
           <section className="project-intro">
@@ -266,6 +329,13 @@ export function ProjectPage({ slug, user, sessionReady }) {
             </div>
             {project.schedule && <p className="project-schedule">{project.schedule}</p>}
             <p>{project.summary}</p>
+            {project.open && <div className="project-card-actions">
+              <ShortlistToggle project={project} saved={saved}
+                onToggle={() => saved ? shortlist.remove(project.id) : shortlist.save(project)} />
+              {!fromShortlist && shortlist.entries.length > 0 && <Button variant="plain" href="/?shortlist=1#projects">
+                View shortlist
+              </Button>}
+            </div>}
             {project.demo && <p className="project-example">Preview listing. Organizer action links are disabled.</p>}
             {!project.open && <Notice>{project.fulfilledAt
               ? 'The organizer marked this request fulfilled.' : 'This request is closed.'}</Notice>}
@@ -273,6 +343,12 @@ export function ProjectPage({ slug, user, sessionReady }) {
 
           <div className="project-body">
             <div className="project-story">
+              {project.volunteerFit && (
+                <section aria-labelledby="project-fit-heading">
+                  <h2 id="project-fit-heading">Who might enjoy this?</h2>
+                  <p className="project-fit-text">{project.volunteerFit}</p>
+                </section>
+              )}
               <section id="needs" aria-labelledby="needs-heading">
                 <h2 id="needs-heading">What they need</h2>
                 {project.completion && <div className="project-completion">
