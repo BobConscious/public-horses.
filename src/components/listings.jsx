@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, useState } from 'react';
-import { ArrowRight, Bookmark, BookmarkCheck, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Search, Sprout, X } from 'lucide-react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Search, Sprout, X } from 'lucide-react';
 import { fields, listingTypes } from '../../shared/catalog.js';
 import { dateLabel, fieldName, kindName, listingTypeName } from '../ui.jsx';
 import { Button } from './controls.jsx';
@@ -125,21 +125,32 @@ export function ShortlistToggle({ project, saved, onToggle }) {
   );
 }
 
-const saveDistance = 62;
+const decisionDistance = 62;
 
-export function SwipeOpportunities({ projects, savedIds, onSave, onRemove, onBrowseAll }) {
+export function SwipeOpportunities({ projects, remaining, onSave, onPass, onBrowseAll }) {
   const list = useRef(null);
   const listId = useId();
+  const finished = useRef(null);
   const gesture = useRef(null);
-  const [active, setActive] = useState(0);
+  const [position, setPosition] = useState(0);
   const [drag, setDrag] = useState(0);
-  const [lastSaved, setLastSaved] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const active = position < projects.length ? position : 0;
   const activeProject = projects[active];
-  const confirmed = !drag && lastSaved === activeProject.id && savedIds.has(activeProject.id);
+  const sequence = projects.map(({ id }) => id).join(',');
+  const ready = Math.abs(drag) >= decisionDistance;
+  const showFeedback = !ready && feedback;
+
+  useLayoutEffect(() => {
+    const track = list.current;
+    const card = track?.querySelector('li:not([inert])');
+    if (card) track.scrollTop = card.offsetTop;
+    else if (feedback) finished.current?.focus({ preventScroll: true });
+  }, [sequence, feedback]);
 
   function updateActive({ currentTarget }) {
     const middle = currentTarget.scrollTop + currentTarget.clientHeight / 2;
-    setActive(Array.from(currentTarget.children).findLastIndex((card) => card.offsetTop <= middle));
+    setPosition(Array.from(currentTarget.children).findLastIndex((card) => card.offsetTop <= middle));
   }
 
   function move(index) {
@@ -148,9 +159,11 @@ export function SwipeOpportunities({ projects, savedIds, onSave, onRemove, onBro
     if (card) track.scrollTop = card.offsetTop;
   }
 
-  function save(project) {
-    onSave(project);
-    setLastSaved(project.id);
+  function decide(saved) {
+    setFeedback({ saved, title: activeProject.title });
+    if (active + 1 === remaining) setPosition(0);
+    if (saved) onSave(activeProject);
+    else onPass(activeProject.id);
   }
 
   function startSwipe(event) {
@@ -163,14 +176,15 @@ export function SwipeOpportunities({ projects, savedIds, onSave, onRemove, onBro
   function dragSwipe(event) {
     const start = gesture.current;
     if (start?.id !== event.pointerId) return;
-    const right = event.clientX - start.x;
+    const horizontal = event.clientX - start.x;
+    const distance = Math.abs(horizontal);
     const vertical = Math.abs(event.clientY - start.y);
-    if (right < 12 || right < vertical * 1.4) {
+    if (distance < 12 || distance < vertical * 1.4) {
       setDrag(0);
       return;
     }
     if (!event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.setPointerCapture(event.pointerId);
-    setDrag(right);
+    setDrag(horizontal);
   }
 
   function finishSwipe(event) {
@@ -178,55 +192,66 @@ export function SwipeOpportunities({ projects, savedIds, onSave, onRemove, onBro
     if (start?.id !== event.pointerId || event.type === 'lostpointercapture' && event.target !== event.currentTarget) return;
     gesture.current = null;
     setDrag(0);
-    const right = event.clientX - start.x;
+    const horizontal = event.clientX - start.x;
+    const distance = Math.abs(horizontal);
     const vertical = Math.abs(event.clientY - start.y);
-    if (event.type === 'pointerup' && start.projectId === activeProject.id && right >= saveDistance && right >= vertical * 1.4) {
-      save(activeProject);
+    if (event.type === 'pointerup' && start.projectId === activeProject.id && distance >= decisionDistance && distance >= vertical * 1.4) {
+      decide(horizontal > 0);
     }
   }
 
   return (
     <div className="swipe-deck">
-      <div className="swipe-navigation">
-        <Button variant="outline" aria-label="Previous opportunity" aria-controls={listId}
-          aria-disabled={active === 0} onClick={() => move(active - 1)}>
-          <ChevronUp size={17} aria-hidden="true" /> Previous
+      {activeProject && <div className="swipe-navigation">
+        <Button variant="outline" aria-label={`Pass ${activeProject.title}`} onClick={() => decide(false)}>
+          <ArrowLeft size={17} aria-hidden="true" /> Pass
         </Button>
-        <p className="swipe-position" role="status" aria-atomic="true">
-          {active + 1} of {projects.length}<span className="sr-only">, {projects[active].title}</span>
-        </p>
-        <Button variant="outline" aria-label="Next opportunity" aria-controls={listId}
-          aria-disabled={active === projects.length - 1} onClick={() => move(active + 1)}>
-          Next <ChevronDown size={17} aria-hidden="true" />
+        <div className="swipe-browse-controls">
+          {projects.length > 1 && <Button variant="plain" aria-label="Previous opportunity" aria-controls={listId}
+            aria-disabled={active === 0} onClick={() => move(active - 1)}>
+            <ChevronUp size={17} aria-hidden="true" />
+          </Button>}
+          <p className="swipe-position" role="status" aria-atomic="true">
+            {remaining} left<span className="sr-only">, {activeProject.title}</span>
+          </p>
+          {projects.length > 1 && <Button variant="plain" aria-label="Next opportunity" aria-controls={listId}
+            aria-disabled={active === projects.length - 1} onClick={() => move(active + 1)}>
+            <ChevronDown size={17} aria-hidden="true" />
+          </Button>}
+        </div>
+        <Button aria-label={`Save ${activeProject.title} to shortlist`} onClick={() => decide(true)}>
+          <Bookmark size={17} aria-hidden="true" /> Save
         </Button>
-      </div>
+      </div>}
       <div className="swipe-cue">
-        {!confirmed && <p className="swipe-hint" data-ready={drag >= saveDistance}>
-          {drag >= saveDistance ? 'Release to save.'
-            : projects.length > 1 ? 'Swipe right to save. Swipe up to browse.' : 'Swipe right to save.'}
+        {!showFeedback && activeProject && <p className="swipe-hint" data-ready={ready}>
+          {ready ? (drag < 0 ? 'Release to pass.' : 'Release to save.') : 'Swipe left to pass or right to save.'}
         </p>}
-        <p className={confirmed ? 'swipe-feedback' : 'sr-only'} role="status">
-          {confirmed && <><BookmarkCheck size={16} aria-hidden="true" /> Saved to shortlist</>}
+        <p className={showFeedback ? 'swipe-feedback' : 'sr-only'} role="status" aria-atomic="true">
+          {showFeedback && <>
+            {feedback.saved ? <BookmarkCheck size={16} aria-hidden="true" /> : <ArrowLeft size={16} aria-hidden="true" />}
+            {feedback.saved ? 'Saved to shortlist' : 'Passed'}
+            <span className="sr-only">, {feedback.title}</span>
+          </>}
         </p>
       </div>
-      <ol id={listId} ref={list} className="swipe-track" role="list" tabIndex={0}
+      {activeProject ? <ol id={listId} ref={list} className="swipe-track" role="list" tabIndex={0}
         aria-label="Opportunity cards" onScroll={updateActive} onPointerDown={startSwipe} onPointerMove={dragSwipe}
         onPointerUp={finishSwipe} onPointerCancel={finishSwipe} onLostPointerCapture={finishSwipe}>
         {projects.map((project, index) => {
-          const saved = savedIds.has(project.id);
-          const dragging = index === active && drag > 0;
+          const dragging = index === active && drag !== 0;
           return (
             <li key={project.id} inert={active !== index} className={dragging ? 'swipe-dragging' : undefined}
-              style={dragging ? { '--swipe-offset': `${Math.min(drag / 3, 44)}px` } : undefined}>
-              <ProjectCard project={project} helpAction actions={<>
-                <OpportunityHelpLink project={project} />
-                <ShortlistToggle project={project} saved={saved} onToggle={() => saved ? onRemove(project.id) : save(project)} />
-              </>} />
+              style={dragging ? { '--swipe-offset': `${Math.max(-44, Math.min(drag / 3, 44))}px` } : undefined}>
+              <ProjectCard project={project} helpAction actions={<OpportunityHelpLink project={project} />} />
             </li>
           );
         })}
-      </ol>
-      {onBrowseAll && <Button variant="plain" className="swipe-browse-all" onClick={onBrowseAll}>
+      </ol> : <div className="empty-state swipe-complete">
+        <h2 ref={finished} tabIndex={-1}>You’re caught up</h2>
+        <p>Open Shortlist for saved opportunities or List to reconsider a pass.</p>
+      </div>}
+      {(!activeProject || remaining > projects.length) && <Button variant="plain" className="swipe-browse-all" onClick={onBrowseAll}>
         Browse all listings <ArrowRight size={16} aria-hidden="true" />
       </Button>}
     </div>

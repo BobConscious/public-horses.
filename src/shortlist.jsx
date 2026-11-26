@@ -4,54 +4,80 @@ import { OpportunityHelpLink, ProjectCard } from './components/listings.jsx';
 import { LoadState } from './ui.jsx';
 import './shortlist.css';
 
-const storageKey = 'ph-shortlist';
+const storageKey = 'ph-opportunity-choices';
+const legacyStorageKey = 'ph-shortlist';
 
-function readShortlist() {
+function readStored(key) {
   try {
-    const records = JSON.parse(window.localStorage.getItem(storageKey));
-    if (!Array.isArray(records)) return [];
-    const entries = records.filter((entry) => typeof entry?.id === 'string' && typeof entry.title === 'string');
-    return [...new Map(entries.map(({ id, title }) => [id, { id, title }])).values()];
+    return JSON.parse(window.localStorage.getItem(key));
   } catch {
-    return [];
+    return null;
   }
 }
 
-export function useShortlist() {
-  const [entries, setEntries] = useState(readShortlist);
+function readChoices() {
+  const choices = readStored(storageKey);
+  const records = Array.isArray(choices?.entries) ? choices.entries : readStored(legacyStorageKey);
+  const entries = new Map();
+  for (const item of Array.isArray(records) ? records : []) {
+    if (typeof item?.id === 'string' && typeof item.title === 'string') {
+      entries.set(item.id, { id: item.id, title: item.title });
+    }
+  }
+  const passed = Array.isArray(choices?.passed)
+    ? [...new Set(choices.passed.filter((id) => typeof id === 'string' && !entries.has(id)))]
+    : [];
+  return { entries: [...entries.values()], passed };
+}
+
+export function useOpportunityChoices() {
+  const [choices, setChoices] = useState(readChoices);
   const [stored, setStored] = useState(true);
 
   useEffect(() => {
     if (!stored) return;
     function sync(event) {
-      if (event.key === storageKey || event.key === null) setEntries(readShortlist());
+      if (event.key === storageKey || event.key === legacyStorageKey || event.key === null) setChoices(readChoices());
     }
     window.addEventListener('storage', sync);
     return () => window.removeEventListener('storage', sync);
   }, [stored]);
 
   function update(change) {
-    const current = stored ? readShortlist() : entries;
-    const next = change(current);
-    if (stored && next !== current) {
+    const next = change(stored ? readChoices() : choices);
+    if (stored) {
       try {
         window.localStorage.setItem(storageKey, JSON.stringify(next));
       } catch {
         setStored(false);
       }
     }
-    setEntries(next);
+    setChoices(next);
   }
 
   function save({ id, title }) {
-    update((items) => items.some((item) => item.id === id) ? items : [{ id, title }, ...items]);
+    update(({ entries, passed }) => ({
+      entries: entries.some((item) => item.id === id) ? entries : [{ id, title }, ...entries],
+      passed: passed.filter((item) => item !== id),
+    }));
   }
 
   function remove(id) {
-    update((items) => items.filter((item) => item.id !== id));
+    update((current) => ({ ...current, entries: current.entries.filter((item) => item.id !== id) }));
   }
 
-  return { entries, stored, save, remove };
+  function pass(id) {
+    update(({ entries, passed }) => ({
+      entries: entries.filter((item) => item.id !== id),
+      passed: passed.includes(id) ? passed : [...passed, id],
+    }));
+  }
+
+  function undoPass(id) {
+    update((current) => ({ ...current, passed: current.passed.filter((item) => item !== id) }));
+  }
+
+  return { ...choices, stored, save, remove, pass, undoPass };
 }
 
 export function ShortlistDialog({ entries, stored, load, onRemove, onClose }) {
