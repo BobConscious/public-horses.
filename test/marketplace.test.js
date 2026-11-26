@@ -79,9 +79,14 @@ test('an organizer submits, gets feedback, and a different reviewer publishes th
   const reviewerEmail = await signup(reviewer, 'Reviewer');
   store.setReviewer(ownerEmail);
   store.setReviewer(reviewerEmail);
-  const { data: { project: draft } } = await owner('/projects', { method: 'POST', body: request, expect: 0 });
+  await owner('/projects', { method: 'POST', body: { ...request, volunteerFit: 'x'.repeat(401) }, expect: 400 });
+  const volunteerFit = 'If you like working with a small crew, we’d love to have you. First-timers are welcome.';
+  const { data: { project: draft } } = await owner('/projects', {
+    method: 'POST', body: { ...request, volunteerFit: `  ${volunteerFit}  ` }, expect: 201,
+  });
   assert.equal(draft.status, 'draft');
   assert.equal(draft.completion, '');
+  assert.equal(draft.volunteerFit, volunteerFit);
   assert.deepEqual((await guest('/projects')).data.projects, []);
   await guest('/projects/' + draft.slug, { expect: 404 });
   const mine = '/mine/projects/' + draft.id;
@@ -95,13 +100,24 @@ test('an organizer submits, gets feedback, and a different reviewer publishes th
   });
   assert.equal(held.status, 'changes_requested');
   const { data: { project: edited } } = await owner(mine, { method: 'PATCH', body: { ...request, version: held.version } });
-  const { data: { project: current } } = await owner(mine + '/submit', { method: 'POST', body: { version: edited.version } });
+  assert.equal(edited.volunteerFit, volunteerFit);
+  const { data: { project: cleared } } = await owner(mine, {
+    method: 'PATCH', body: { ...request, version: edited.version, volunteerFit: '  ' },
+  });
+  assert.equal(cleared.volunteerFit, '');
+  const { data: { project: restored } } = await owner(mine, {
+    method: 'PATCH', body: { ...request, version: cleared.version, volunteerFit },
+  });
+  const { data: { project: current } } = await owner(mine + '/submit', { method: 'POST', body: { version: restored.version } });
+  assert.equal((await reviewer('/review')).data.projects[0].volunteerFit, volunteerFit);
+  await guest('/projects/' + draft.slug, { expect: 404 });
   await reviewer(review, { method: 'POST', body: { version: submitted.version, decision: 'publish', note: 'Outdated.' }, expect: 409 });
   const { data: { project: published } } = await reviewer(review, {
     method: 'POST', body: { version: current.version, decision: 'publish', note: 'Verified the official ask.' },
   });
   const publicCard = (await guest('/projects/' + draft.slug)).data.project;
   assert.equal(publicCard.title, request.title);
+  assert.equal(publicCard.volunteerFit, volunteerFit);
   assert.equal(publicCard.open, true);
   assert.equal('proofUrl' in publicCard, false);
   assert.equal('reviewNote' in publicCard, false);
@@ -365,7 +381,7 @@ test('a file-backed store retains fixtures across restarts', () => {
     }
     const second = createStore(database);
     try {
-      assert.equal(second.listPublic(true).length, 5);
+      assert.equal(second.listPublic(true).length, 6);
       assert.equal(second.listPublic(false).length, 0);
     } finally {
       second.close();
@@ -401,7 +417,8 @@ test('opening a previous database keeps closed listings and original private ser
 
     const previous = new DatabaseSync(database);
     try {
-      previous.exec(`ALTER TABLE projects DROP COLUMN completion;
+      previous.exec(`ALTER TABLE projects DROP COLUMN volunteer_fit;
+        ALTER TABLE projects DROP COLUMN completion;
         ALTER TABLE projects DROP COLUMN fulfilled_at;
         ALTER TABLE seeds DROP COLUMN reflection;`);
     } finally {
@@ -414,6 +431,7 @@ test('opening a previous database keeps closed listings and original private ser
         const [closed] = migrated.listOwned(owner);
         assert.equal(closed.id, draft.id);
         assert.equal(closed.status, 'closed');
+        assert.equal(closed.volunteerFit, '');
         assert.equal(closed.completion, '');
         assert.equal(closed.fulfilledAt, null);
         assert.deepEqual(migrated.listSeeds(reviewer), [seed]);

@@ -1,5 +1,9 @@
 # Public Horses mission
 
+**Identity.** Public Horses is the Buddhist volunteer platform.
+
+**Slogan.** Where service is a practice.
+
 **Mission.** Help people post and fulfill acts of service, and learn how service shapes the world they want to create.
 
 **Vision.** People make service a lifelong practice. Community organizers can ask for specific help and get what they need.
@@ -10,8 +14,8 @@ In the teaching, a village pooled its resources for a horse anyone could use. Fo
 
 1. **Ask.** A person or organization makes a specific request. It states what is needed, when, how to help, and what counts as complete.
 2. **Review.** A reviewer checks the organizer, request, support links, and any image. Approval publishes the reviewed version.
-3. **Find and serve.** A supporter responds through the organizer’s own channel. The organizer marks the request fulfilled when the help meets the need.
-4. **Reflect and return.** The supporter records what they did and what they want to cultivate. They can return to the private garden to record what they notice and choose another act of service.
+3. **Find and serve.** A supporter can shortlist opportunities before using the response link that the organizer provides. The organizer marks the request fulfilled when the help meets the need.
+4. **Reflect and return.** The supporter records what they did and what they want to cultivate. In the private garden, they remember emptiness and rejoice before they water a seed. They can record what they notice and choose another act of service.
 
 ## Principles
 

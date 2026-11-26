@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS projects (
   location TEXT NOT NULL,
   summary TEXT NOT NULL,
   story TEXT NOT NULL,
+  volunteer_fit TEXT NOT NULL DEFAULT '',
   completion TEXT NOT NULL DEFAULT '',
   field TEXT NOT NULL CHECK (field IN ('nourishment', 'health', 'relationships',
     'livelihood', 'happiness', 'partnership')),

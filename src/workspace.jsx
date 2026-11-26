@@ -107,6 +107,8 @@ function ProjectEditor({ project, profiles, preferredProfile, onSaved, onCancel 
         <Field label="What counts as complete?" as="textarea" optional name="completion" rows={2} maxLength={280}
           defaultValue={project?.completion} hint="For example, sort 20 boxes of donations for Saturday pickup." />
         <Field label="Opportunity description" as="textarea" required name="story" rows={5} maxLength={4000} defaultValue={project?.story} />
+        <Field label="Who might enjoy this?" as="textarea" optional name="volunteerFit" rows={3} maxLength={400}
+          defaultValue={project?.volunteerFit} hint="Say what people might enjoy, what helps, and whether beginners are welcome." />
         <ListingImageEditor editor={image} pending={pending} />
         <fieldset className="needs-editor">
           <legend>What do you need?</legend>
@@ -302,6 +304,10 @@ function ReviewCard({ project, onDecision }) {
         <p>{project.completion}</p>
       </div>}
       <p className="review-story">{project.story}</p>
+      {project.volunteerFit && <>
+        <h3>Who might enjoy this?</h3>
+        <p className="review-story">{project.volunteerFit}</p>
+      </>}
       {project.image && <ReviewListingImage image={project.image} preview={preview} />}
       <ul className="review-needs">
         {project.needs.map((need) => {
